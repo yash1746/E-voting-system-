@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>E-Voting System — Project Synopsis</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Times New Roman', Georgia, serif;
+  font-size: 12pt;
+  line-height: 1.8;
+  color: #111;
+  background: #fff;
+  counter-reset: section;
+}
+
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm 22mm 20mm 25mm;
+  margin: 0 auto;
+  background: #fff;
+}
+
+/* ═══════════════════════════════════════════════════
+   COVER PAGE
+═══════════════════════════════════════════════════ */
+.cover-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 257mm;
+  border: 2px solid #1a3c6e;
+  padding: 30px;
+  position: relative;
+}
+
+.cover-page::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid #1a3c6e;
+  pointer-events: none;
+}
+
+.college-name {
+  font-size: 13pt;
+  font-weight: bold;
+  color: #1a3c6e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.college-sub {
+  font-size: 10pt;
+  color: #444;
+  margin-bottom: 30px;
+}
+
+.cover-logo {
+  font-size: 60pt;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+.cover-title {
+  font-size: 22pt;
+  font-weight: bold;
+  color: #1a3c6e;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-top: 2px solid #1a3c6e;
+  border-bottom: 2px solid #1a3c6e;
+  padding: 12px 0;
+  margin: 20px 0;
+  width: 100%;
+}
+
+.cover-subtitle {
+  font-size: 13pt;
+  color: #333;
+  font-style: italic;
+  margin-bottom: 30px;
+}
+
+.cover-submitted {
+  font-size: 11pt;
+  color: #333;
+  margin-top: 20px;
+  line-height: 2;
+}
+
+.cover-submitted strong { color: #1a3c6e; }
+
+.cover-session {
+  margin-top: 30px;
+  font-size: 11pt;
+  font-weight: bold;
+  color: #1a3c6e;
+  border: 1px solid #1a3c6e;
+  padding: 8px 30px;
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════
+   TABLE OF CONTENTS
+═══════════════════════════════════════════════════ */
+.toc-page { page-break-before: always; }
+
+.toc-title {
+  font-size: 16pt;
+  font-weight: bold;
+  text-align: center;
+  color: #1a3c6e;
+  border-bottom: 2px solid #1a3c6e;
+  padding-bottom: 8px;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.toc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px dotted #aaa;
+  font-size: 11pt;
+}
+
+.toc-item.main { font-weight: bold; color: #1a3c6e; font-size: 12pt; }
+.toc-item.sub  { padding-left: 20px; color: #333; font-size: 11pt; }
+.toc-num { color: #1a3c6e; font-weight: bold; margin-right: 10px; }
+.toc-dotts { flex: 1; border-bottom: 1px dotted #999; margin: 0 8px; height: 1em; }
+.toc-page-num { color: #444; }
+
+/* ═══════════════════════════════════════════════════
+   CONTENT PAGES
+═══════════════════════════════════════════════════ */
+.content-page { page-break-before: always; }
+
+/* Chapter heading */
+.chapter-heading {
+  background: #1a3c6e;
+  color: #fff;
+  font-size: 14pt;
+  font-weight: bold;
+  padding: 10px 18px;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Section heading */
+h2 {
+  font-size: 13pt;
+  font-weight: bold;
+  color: #1a3c6e;
+  margin: 22px 0 10px;
+  padding-left: 10px;
+  border-left: 4px solid #1a3c6e;
+}
+
+h3 {
+  font-size: 12pt;
+  font-weight: bold;
+  color: #333;
+  margin: 16px 0 8px;
+  text-decoration: underline;
+}
+
+p {
+  margin-bottom: 10px;
+  text-align: justify;
+  font-size: 11.5pt;
+}
+
+/* ═══════════════════════════════════════════════════
+   TABLES
+═══════════════════════════════════════════════════ */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 11pt;
+  page-break-inside: avoid;
+}
+
+th {
+  background: #1a3c6e;
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: bold;
+  font-size: 10.5pt;
+}
+
+td {
+  padding: 7px 12px;
+  border: 1px solid #ccc;
+  vertical-align: top;
+}
+
+tr:nth-child(even) td { background: #f4f7fb; }
+
+.table-caption {
+  font-size: 10pt;
+  font-style: italic;
+  text-align: center;
+  color: #555;
+  margin-top: 4px;
+  margin-bottom: 14px;
+}
+
+/* ═══════════════════════════════════════════════════
+   DIAGRAMS
+═══════════════════════════════════════════════════ */
+.diagram-section {
+  page-break-before: always;
+}
+
+.diagram-box {
+  border: 1px solid #1a3c6e;
+  border-radius: 4px;
+  padding: 16px;
+  margin: 16px 0;
+  background: #fafcff;
+  page-break-inside: avoid;
+  text-align: center;
+}
+
+.diagram-caption {
+  font-size: 10pt;
+  font-weight: bold;
+  text-align: center;
+  color: #1a3c6e;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.diagram-note {
+  font-size: 9.5pt;
+  font-style: italic;
+  color: #666;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════════
+   LISTS
+═══════════════════════════════════════════════════ */
+ul, ol {
+  margin: 10px 0 10px 24px;
+  font-size: 11.5pt;
+}
+
+li { margin-bottom: 5px; }
+
+/* ═══════════════════════════════════════════════════
+   HIGHLIGHT BOXES
+═══════════════════════════════════════════════════ */
+.highlight-box {
+  background: #eef3fb;
+  border: 1px solid #1a3c6e;
+  border-left: 5px solid #1a3c6e;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 11pt;
+  border-radius: 0 4px 4px 0;
+}
+
+.key-point {
+  background: #fff8e1;
+  border: 1px solid #f59e0b;
+  border-left: 5px solid #f59e0b;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 11pt;
+  border-radius: 0 4px 4px 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   PRINT BUTTON (hidden on print)
+═══════════════════════════════════════════════════ */
+.print-btn {
+  position: fixed;
+  bottom: 30px; right: 30px;
+  background: #1a3c6e;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  z-index: 1000;
+  font-family: Arial, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════
+   PRINT MEDIA
+═══════════════════════════════════════════════════ */
+@media print {
+  .print-btn { display: none !important; }
+  .page { margin: 0; padding: 20mm 22mm 20mm 25mm; }
+  body { background: #fff; }
+}
+
+/* Header / Footer */
+.page-header {
+  font-size: 9pt;
+  color: #888;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+code {
+  font-family: 'Courier New', monospace;
+  background: #eef3fb;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10.5pt;
+}
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">🖨️ Export to PDF</button>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 1 — COVER
+═══════════════════════════════════════════════ -->
+<div class="page">
+  <div class="cover-page">
+    <div class="college-name">Project Synopsis</div>
+    <div class="college-sub">Submitted in partial fulfilment of the requirement for the degree of B.Tech / MCA</div>
+
+    <div class="cover-logo">🏛️</div>
+
+    <div class="cover-title">National E-Voting System</div>
+    <div class="cover-subtitle">A Secure, Anonymous & Transparent Digital Election Platform</div>
+
+    <div style="margin-top:20px; font-size:11pt; color:#444; line-height:2;">
+      <strong>Submitted By:</strong> Yash Sharma, Shreeya s. Nayak, Nihira, Sameer.<br>
+      <strong>Technology Stack:</strong> Node.js · Express · Supabase · Vanilla JS<br>
+      <strong>Domain:</strong> Web Application Development / Cybersecurity
+    </div>
+
+    <div class="cover-session">Academic Year: 2025–2026</div>
+
+    <div style="margin-top:30px; font-size:10pt; color:#666; font-style:italic;">
+      "Every vote matters — secured by cryptography, verified by transparency"
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 2 — TABLE OF CONTENTS
+═══════════════════════════════════════════════ -->
+<div class="page toc-page">
+  <div class="toc-title">Table of Contents</div>
+
+  <div class="toc-item main"><span><span class="toc-num">1.</span> Abstract</span><span class="toc-dotts"></span><span class="toc-page-num">3</span></div>
+  <div class="toc-item main"><span><span class="toc-num">2.</span> Introduction & Problem Statement</span><span class="toc-dotts"></span><span class="toc-page-num">3</span></div>
+  <div class="toc-item main"><span><span class="toc-num">3.</span> Objectives of the Project</span><span class="toc-dotts"></span><span class="toc-page-num">4</span></div>
+  <div class="toc-item main"><span><span class="toc-num">4.</span> System Architecture</span><span class="toc-dotts"></span><span class="toc-page-num">4</span></div>
+  <div class="toc-item sub"><span>4.1 Three-Tier Architecture</span><span class="toc-dotts"></span><span class="toc-page-num">4</span></div>
+  <div class="toc-item sub"><span>4.2 Database Schema</span><span class="toc-dotts"></span><span class="toc-page-num">5</span></div>
+  <div class="toc-item main"><span><span class="toc-num">5.</span> Authentication Flow</span><span class="toc-dotts"></span><span class="toc-page-num">6</span></div>
+  <div class="toc-item main"><span><span class="toc-num">6.</span> Vote Casting Process</span><span class="toc-dotts"></span><span class="toc-page-num">7</span></div>
+  <div class="toc-item main"><span><span class="toc-num">7.</span> Security Mechanisms</span><span class="toc-dotts"></span><span class="toc-page-num">8</span></div>
+  <div class="toc-item sub"><span>7.1 SHA-256 Hash Chain</span><span class="toc-dotts"></span><span class="toc-page-num">8</span></div>
+  <div class="toc-item sub"><span>7.2 Security Middleware Stack</span><span class="toc-dotts"></span><span class="toc-page-num">9</span></div>
+  <div class="toc-item main"><span><span class="toc-num">8.</span> Modules & Features</span><span class="toc-dotts"></span><span class="toc-page-num">9</span></div>
+  <div class="toc-item main"><span><span class="toc-num">9.</span> Technology Stack</span><span class="toc-dotts"></span><span class="toc-page-num">10</span></div>
+  <div class="toc-item main"><span><span class="toc-num">10.</span> Conclusion</span><span class="toc-dotts"></span><span class="toc-page-num">10</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 3 — ABSTRACT + INTRO
+═══════════════════════════════════════════════ -->
+<div class="page content-page">
+  <div class="page-header"><span>National E-Voting System — Project Synopsis</span><span>Section 1 & 2</span></div>
+
+  <div class="chapter-heading">1. Abstract</div>
+  <p>
+    The <strong>National E-Voting System</strong> is a full-stack web application designed to conduct government-grade digital elections in a secure, anonymous, and transparent manner. The system addresses major challenges of traditional voting: physical inaccessibility, risk of ballot manipulation, identity fraud, and lack of transparency in the counting process.
+  </p>
+  <p>
+    Using modern cryptographic techniques — AES-256-GCM encryption and SHA-256 hash chains — the platform guarantees that every ballot is anonymous, every vote is immutable after casting, and the entire election record can be verified publicly by any citizen. Multi-step government ID verification ensures only registered voters participate, while a dedicated administrative panel gives election officers full control over the election lifecycle.
+  </p>
+
+  <div class="chapter-heading" style="margin-top:28px;">2. Introduction & Problem Statement</div>
+
+  <h2>2.1 Background</h2>
+  <p>
+    Traditional paper-based voting systems suffer from multiple challenges including logistical limitations, physical ballot tampering, counting errors, and accessibility issues for remote or physically challenged voters. Earlier electronic voting machines (EVMs) addressed some concerns but lacked public transparency and remote accessibility.
+  </p>
+  <p>
+    With increasing internet penetration and digital literacy, an internet-based voting system that combines strong security with ease of access is both practical and necessary.
+  </p>
+
+  <h2>2.2 Problem Statement</h2>
+  <p>
+    Design and implement a web-based e-voting system that:
+  </p>
+  <ul>
+    <li>Allows only verified, registered voters to cast votes using government-issued identity verification</li>
+    <li>Guarantees complete voter anonymity — no link between a voter's identity and their ballot</li>
+    <li>Prevents duplicate voting even if a voter attempts to cast multiple times</li>
+    <li>Makes the voting record tamper-proof using cryptographic techniques</li>
+    <li>Provides a publicly accessible audit trail for election transparency</li>
+    <li>Gives citizens access to party manifestos, actions, and speeches before voting</li>
+  </ul>
+
+  <div class="key-point">
+    <strong>Core Challenge:</strong> How do you simultaneously guarantee that a vote is <em>authentic</em> (came from a real, eligible voter), <em>anonymous</em> (cannot be traced back to the voter), and <em>immutable</em> (cannot be changed after submission)?
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 4 — OBJECTIVES + ARCHITECTURE
+═══════════════════════════════════════════════ -->
+<div class="page content-page">
+  <div class="page-header"><span>National E-Voting System — Project Synopsis</span><span>Section 3 & 4</span></div>
+
+  <div class="chapter-heading">3. Objectives of the Project</div>
+  <ol>
+    <li>Implement a <strong>3-step government-style authentication</strong> (Voter ID → OTP → Session) to verify voter identity</li>
+    <li>Achieve <strong>complete ballot anonymity</strong> through database design that physically separates voter identity from vote content</li>
+    <li>Prevent <strong>dual voting</strong> using database-level unique constraints at the (voter, election) pair</li>
+    <li>Implement <strong>SHA-256 hash chaining</strong> to create a tamper-evident, immutable vote ledger</li>
+    <li>Provide a <strong>public audit trail</strong> where any citizen can verify chain integrity and their own vote receipt</li>
+    <li>Build a <strong>Party Transparency Portal</strong> showcasing each party's actions, legislation record, and speeches</li>
+    <li>Develop a full <strong>Admin Panel</strong> for managing elections, voter registry, and audit logs</li>
+    <li>Apply industry-standard <strong>security middleware</strong> stack (Helmet, CORS, rate limiting, CSP)</li>
+  </ol>
+
+  <div class="chapter-heading" style="margin-top:28px;">4. System Architecture</div>
+
+  <h2>4.1 Three-Tier Architecture</h2>
+  <p>
+    The system follows a classic three-tier model: a static frontend, a Node.js/Express API server, and a Supabase (PostgreSQL) managed database. The frontend communicates with the server exclusively through a REST API with session cookies.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 5 — ARCHITECTURE DIAGRAM
+═══════════════════════════════════════════════ -->
+<div class="page diagram-section">
+  <div class="page-header"><span>National E-Voting System — Project Synopsis</span><span>Section 4.1 — Architecture</span></div>
+
+  <div class="diagram-box">
+    <div class="diagram-caption">Figure 1: System Architecture Diagram</div>
+    <div class="mermaid">
+graph TD
+    subgraph FE["PRESENTATION LAYER — Browser"]
+        P1["Landing Page"]
+        P2["Login / Auth Page"]
+        P3["Voter Dashboard"]
+        P4["Voting Booth"]
+        P5["Party Portal"]
+        P6["Audit Trail"]
+        P7["Admin Panel"]
+    end
+
+    subgraph BE["BUSINESS LOGIC LAYER — Node.js / Express Server"]
+        MW["Security Middleware\n(Helmet · Rate Limiter · CORS · Cookies)"]
+        R1["/api/auth\nAuthentication Routes"]
+        R2["/api/elections\nElection Management"]
+        R3["/api/vote\nVote Casting & Receipt"]
+        R4["/api/results\nResults & Audit Chain"]
+        R5["/api/parties\nParty Transparency"]
+        R6["/api/admin\nAdmin Controls"]
+        CRYPTO["Crypto Utils\nAES-256 · SHA-256"]
+        MAIL["Mailer\nOTP Delivery"]
+    end
+
+    subgraph DB["DATA LAYER — Supabase PostgreSQL"]
+        T1["eligible_voters"]
+        T2["voter_sessions"]
+        T3["elections"]
+        T4["votes (anonymous)"]
+        T5["vote_receipts"]
+        T6["parties & speeches"]
+        T7["audit_logs"]
+    end
+
+    FE -->|"REST API + Cookie"| MW
+    MW --> R1 & R2 & R3 & R4 & R5 & R6
+    R1 --> CRYPTO & MAIL
+    R3 --> CRYPTO
+    R1 & R2 & R3 & R4 & R5 & R6 --> DB
+    </div>
+    <div class="diagram-note">The frontend never directly accesses the database. All data flows through the authenticated API layer.</div>
+  </div>
+
+  <h2>4.2 Database Design</h2>
+  <p>
+    The database contains <strong>9 tables</strong>. The most critical design decision is the <strong>separation of identity and ballot</strong> into two tables:
+  </p>
+  <ul>
+    <li><strong>votes</strong> — stores encrypted ballot + hash chain. Contains NO voter reference whatsoever.</li>
+    <li><strong>vote_receipts</strong> — stores only that a voter voted in an election, NOT what they voted for.</li>
+  </ul>
+
+  <div class="diagram-box" style="margin-top:16px;">
+    <div class="diagram-caption">Figure 2: Database Entity-Relationship Diagram (Simplified)</div>
+    <div class="mermaid">
+erDiagram
+    eligible_voters {
+        uuid id PK
+        text voter_id_number UK
+        text full_name
+        text email
+        bool is_active
+    }
+    voter_sessions {
+        uuid id PK
+        uuid eligible_voter_id FK
+        text session_token UK
+        text otp_code
+        bool otp_verified
+        text role
+    }
+    elections {
+        uuid id PK
+        text title
+        jsonb candidates
+        text status
+    }
+    votes {
+        uuid id PK
+        uuid election_id FK
+        text encrypted_ballot
+        text vote_hash UK
+        text previous_hash
+        text receipt_token UK
+    }
+    vote_receipts {
+        uuid id PK
+        uuid eligible_voter_id FK
+        uuid election_id FK
+        text receipt_token
+    }
+    parties {
+        uuid id PK
+        text name
+        text leader_name
+    }
+
+    eligible_voters ||--o{ voter_sessions : "authenticates via"
+    eligible_voters ||--o{ vote_receipts  : "has receipt (NOT ballot)"
+    elections       ||--o{ votes          : "receives"
+    elections       ||--o{ vote_receipts  : "tracked by"
+    parties         ||--o{ votes          : "receives votes in"
+    </div>
+    <div class="diagram-note">Note: The votes table has NO direct link to eligible_voters — this is the anonymity guarantee.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 6 — AUTHENTICATION
+═══════════════════════════════════════════════ -->
+<div class="page content-page">
+  <div class="page-header"><span>National E-Voting System — Project Synopsis</span><span>Section 5 — Authentication</span></div>
+
+  <div class="chapter-heading">5. Authentication Flow</div>
+
+  <p>
+    Instead of traditional username/password or OAuth login, the system uses a <strong>Government-ID-based OTP verification</strong> in 3 steps. This mimics real electoral card verification and provides two-factor security.
+  </p>
+
+  <div class="diagram-box">
+    <div class="diagram-caption">Figure 3: 3-Step Authentication Sequence</div>
+    <div class="mermaid">
+sequenceDiagram
+    actor V as Voter
+    participant UI as Login Page
+    participant API as API Server
+    participant DB as Database
+    participant OTP as OTP Delivery
+
+    Note over V,OTP: STEP 1 — Verify Voter ID
+    V->>UI: Enters Voter ID (e.g. ECI0001234)
+    UI->>API: POST /api/auth/verify-voter
+    API->>DB: SELECT from eligible_voters
+    DB-->>API: Voter found (name, masked contact)
+    API-->>UI: ✅ Voter verified — show OTP screen
+
+    Note over V,OTP: STEP 2 — Send OTP
+    UI->>API: POST /api/auth/send-otp
+    API->>API: Generate 6-digit OTP + Session Token
+    API->>API: Assign role (admin if ID starts with ADMIN)
+    API->>DB: INSERT voter_sessions with OTP + role
+    API->>OTP: Send OTP to registered email
+    API-->>UI: session_token returned
+
+    Note over V,OTP: STEP 3 — Verify OTP
+    V->>UI: Enters 6-digit OTP
+    UI->>API: POST /api/auth/verify-otp
+    API->>DB: Validate OTP + check expiry (10 min)
+    DB-->>API: OTP correct
+    API->>DB: Mark otp_verified=true, clear OTP code
+    API-->>UI: Set HTTP-only Cookie (valid 8 hours)
+    UI->>UI: Redirect to Dashboard
+    </div>
+    <div class="diagram-note">OTP is cleared from the database after a single use. Session expires automatically after 8 hours.</div>
+  </div>
+
+  <table style="margin-top:16px;">
+    <tr><th>Step</th><th>Action</th><th>Security Feature</th></tr>
+    <tr><td>Step 1</td><td>Verify Voter ID in registry</td><td>Only registered voters proceed; rate limited to prevent brute force</td></tr>
+    <tr><td>Step 2</td><td>Generate and send OTP</td><td>6-digit OTP, 10-minute expiry, old sessions purged on new login</td></tr>
+    <tr><td>Step 3</td><td>Validate OTP → Issue cookie</td><td>OTP single-use, cleared after verification; session = HTTP-only cookie</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 7 — VOTE CASTING
+═══════════════════════════════════════════════ -->
+<div class="page content-page">
+  <div class="page-header"><span>National E-Voting System — Project Synopsis</span><span>Section 6 — Vote Casting</span></div>
+
+  <div class="chapter-heading">6. Vote Casting Process</div>
+
+  <p>
+    The vote casting process is designed to be simple for the voter while being cryptographically secure and anonymous on the backend. The entire process — from candidate selection to receipt generation — is completed in a single atomic database transaction.
+  </p>
+
+  <div class="diagram-box">
+    <div class="diagram-caption">Figure 4: Vote Casting Flowchart</div>
+    <div class="mermaid">
+flowchart TD
+    A([Voter opens Voting Booth]) --> B[Load election details from API]
+    B --> C{Already voted\nin this election?}
+    C -->|Yes| D[Show existing\nreceipt token]
+    C -->|No| E[Display candidate cards\nwith party symbols & colors]
+    E --> F[Voter clicks a candidate\nCard highlights with checkmark]
+    F --> G[Click 'Confirm Selection' button]
+    G --> H[Confirmation modal appears\nShows name, party, final warning]
+    H --> I{Voter confirms?}
+    I -->|Cancel| E
+    I -->|Submit| J
+
+    subgraph SERVER["Backend Processing"]
+        J[Validate session cookie] --> K{Duplicate\nvote check}
+        K -->|Already voted| L[❌ Return 403\nAlready voted error]
+        K -->|First vote| M[Encrypt ballot\nusing AES-256-GCM]
+        M --> N[Compute vote_hash\nSHA-256 of encrypted ballot]
+        N --> O[Get previous_hash\nfrom last vote in chain]
+        O --> P[INSERT into votes table\nNO voter identity stored]
+        P --> Q[INSERT into vote_receipts\nOnly voter + election ID]
+        Q --> R[Generate receipt_token\nRandom UUID for voter]
+    end
+
+    R --> S[Return receipt_token to voter]
+    S --> T([Voter saves receipt\nto verify later])
+
+    style L fill:#fee2e2,color:#991b1b
+    style P fill:#dbeafe,color:#1e3a8a
+    style Q fill:#dcfce7,color:#166534
+    </div>
+    <div class="diagram-note">Figure 4: The votes table stores ONLY the encrypted ballot — no voter identity. The vote_receipts table stores ONLY that a voter voted — not what they chose.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 8 — SECURITY
+═══════════════════════════════════════════════ -->
+<div class="page content-page">
+  <div class="page-header"><span>National E-Voting System — Project Synopsis</span><span>Section 7 — Security</span></div>
+
+  <div class="chapter-heading">7. Security Mechanisms</div>
+
+  <h2>7.1 SHA-256 Hash Chain</h2>
+  <p>
+    The system implements a <strong>blockchain-inspired hash chain</strong> for all votes. Each vote contains a hash of itself and a link to the hash of the previous vote. This creates a chain where tampering with any single record breaks all subsequent links.
+  </p>
+
+  <div class="diagram-box">
+    <div class="diagram-caption">Figure 5: SHA-256 Hash Chain for Tamper-Evidence</div>
+    <div class="mermaid">
+graph LR
+    G["🔰 Genesis\nprev_hash = 00000000"]
+    V1["Vote #1\nvote_hash = H₁\nprev_hash = 00000000"]
+    V2["Vote #2\nvote_hash = H₂\nprev_hash = H₁"]
+    V3["Vote #3\nvote_hash = H₃\nprev_hash = H₂"]
+    VN["...Vote #N\nprev_hash = Hₙ₋₁"]
+
+    FORMULA["vote_hash = SHA256(encrypted_ballot)\nprev_hash = vote_hash of previous vote"]
+
+    G ==>|links to| V1 ==>|links to| V2 ==>|links to| V3 ==>|links to| VN
+
+    style G    fill:#dbeafe,color:#1e3a8a,stroke:#1d4ed8
+    style V1   fill:#eff6ff,color:#1e3a8a,stroke:#93c5fd
+    style V2   fill:#eff6ff,color:#1e3a8a,stroke:#93c5fd
+    style V3   fill:#eff6ff,color:#1e3a8a,stroke:#93c5fd
+    style VN   fill:#eff6ff,color:#1e3a8a,stroke:#93c5fd
+    style FORMULA fill:#fafafa,color:#333,stroke:#ccc
+    </div>
+    <div class="diagram-note">If Vote #2 is tampered with, H₂ changes → Vote #3's prev_hash validation fails → entire chain from #3 onwards is flagged as broken.</div>
+  </div>
+
+  <div class="highlight-box">
+    <strong>Audit Trail:</strong> Any citizen can visit the Audit page and verify: (1) the entire chain is intact, (2) their specific vote receipt is included in the chain. This provides full public transparency without revealing who voted for whom.
+  </div>
+
+  <h2>7.2 Security Middleware Stack</h2>
+  <div class="diagram-box">
+    <div class="diagram-caption">Figure 6: Server-Side Security Layers</div>
+    <div class="mermaid">
+graph LR
+    A["📡 Request\nfrom Browser"] --> B
+    B["🪖 Helmet\nXSS · CSP\nClickjacking"] --> C
+    C["⏱️ Rate Limiter\n10 req per 15 min\non auth routes"] --> D
+    D["🌐 CORS\nWhitelisted\norigins only"] --> E
+    E["🍪 Session Cookie\nHTTP-only\nSameSite=Strict"] --> F
+    F["🔑 requireAuth\nDB session\nvalidation"] --> G
+    G["👑 requireAdmin\nRole check\n(if admin route)"] --> H
+    H["📦 Route\nHandler"] --> I
+    I["🗄️ Supabase RLS\nRow Level\nSecurity"]
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+  PAGE 9 — MODULES & TECH
+═══════════════════════════════════════════════ -->
+<div class="page content-page">
+  <div class="page-header"><span>National E-Voting System — Project Synopsis</span><span>Section 8 & 9</span></div>
+
+  <div class="chapter-heading">8. System Modules & Features</div>
+
+  <table>
+    <tr><th>Module</th><th>Page/Route</th><th>Key Features</th></tr>
+    <tr>
+      <td><strong>Landing Page</strong></td>
+      <td><code>/index.html</code></td>
+      <td>Hero section, animated stats, 6-feature showcase, process walkthrough</td>
+    </tr>
+    <tr>
+      <td><strong>Authentication</strong></td>
+      <td><code>/login.html</code></td>
+      <td>3-step govt ID verification, 6-digit OTP input with countdown timer, auto-fill in demo mode</td>
+    </tr>
+    <tr>
+      <td><strong>Voter Dashboard</strong></td>
+      <td><code>/dashboard.html</code></td>
+      <td>Voter info card, active/upcoming elections list, voted status badges, quick links</td>
+    </tr>
+    <tr>
+      <td><strong>Voting Booth</strong></td>
+      <td><code>/vote.html</code></td>
+      <td>Candidate card grid, confirmation modal, vote progress bar, receipt display with hash</td>
+    </tr>
+    <tr>
+      <td><strong>Party Portal</strong></td>
+      <td><code>/parties.html</code></td>
+      <td>Party sidebar list, tabbed view for actions/speeches, embedded YouTube videos, manifesto</td>
+    </tr>
+    <tr>
+      <td><strong>Election Results</strong></td>
+      <td><code>/results.html</code></td>
+      <td>Live vote tally, animated percentage bars, winner card, hash chain integrity status</td>
+    </tr>
+    <tr>
+      <td><strong>Audit Trail</strong></td>
+      <td><code>/audit.html</code></td>
+      <td>Full cryptographic hash chain visualization, receipt token verification, chain integrity badge</td>
+    </tr>
+    <tr>
+      <td><strong>Admin Panel</strong></td>
+      <td><code>/admin.html</code></td>
+      <td>Election lifecycle management, voter registry CRUD, system stats, audit log viewer</td>
+    </tr>
+  </table>
+
+  <div class="chapter-heading" style="margin-top:28px;">9. Technology Stack</div>
+
+  <table>
+    <tr><th>Category</th><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+    <tr><td>Runtime</td><td>Node.js</td><td>v18+</td><td>JavaScript server-side runtime</td></tr>
+    <tr><td>Framework</td><td>Express.js</td><td>v5.x</td><td>HTTP routing, middleware pipeline</td></tr>
+    <tr><td>Database</td><td>Supabase (PostgreSQL)</td><td>v2.x SDK</td><td>Managed DB, RLS, real-time capable</td></tr>
+    <tr><td>Encryption</td><td>Node.js crypto (built-in)</td><td>—</td><td>AES-256-GCM ballot encryption</td></tr>
+    <tr><td>Hashing</td><td>Node.js crypto (built-in)</td><td>—</td><td>SHA-256 for hash chain</td></tr>
+    <tr><td>Email</td><td>Nodemailer</td><td>v8.x</td><td>OTP delivery via SMTP</td></tr>
+    <tr><td>HTTP Security</td><td>Helmet</td><td>v8.x</td><td>Content-Security-Policy, XSS headers</td></tr>
+    <tr><td>Rate Limiting</td><td>express-rate-limit</td><td>v8.x</td><td>Brute force & DDoS protection</td></tr>
+    <tr><td>Frontend</td><td>HTML5 / CSS3 / Vanilla JS</td><td>—</td><td>No framework — maximum performance</td></tr>
+    <tr><td>UI Design</td><td>Custom CSS (Glassmorphism)</td><td>—</td><td>Premium dark-mode govt-style UI</td></tr>
+    <tr><td>Dev Server</td><td>Nodemon</td><td>v3.x</td><td>Auto-restart on file changes</td></tr>
+  </table>
+
+  <div class="chapter-heading" style="margin-top:28px;">10. Conclusion</div>
+  <p>
+    The National E-Voting System successfully addresses all core challenges of digital voting through a combination of careful database design, cryptographic security, and transparent audit mechanisms. The system demonstrates that it is possible to conduct elections that are simultaneously authenticated (only real voters can vote), anonymous (the ballot cannot be traced to the voter), and transparent (anyone can verify the chain of all votes).
+  </p>
+  <p>
+    The project is production-ready with a modular backend, a premium UI, and a complete admin workflow. Future enhancements could include biometric verification integration, blockchain-based distributed audit nodes, and mobile application support.
+  </p>
+
+  <div class="highlight-box" style="margin-top:20px;">
+    <strong>Key Achievement:</strong> The system solves the fundamental paradox of democratic voting — ensuring every vote is authentic and counted, while guaranteeing that no one can ever determine how any individual voted.
+  </div>
+
+  <div style="margin-top:40px; text-align:center; font-size:10pt; color:#888; border-top:1px solid #ccc; padding-top:16px;">
+    — End of Synopsis —<br>
+    National E-Voting System · Project Synopsis · Yash Sharma · 2025–26
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    themeVariables: {
+      primaryColor: '#1a3c6e',
+      primaryTextColor: '#fff',
+      primaryBorderColor: '#0f2a52',
+      lineColor: '#444',
+      secondaryColor: '#eff6ff',
+      tertiaryColor: '#f4f7fb',
+      background: '#ffffff',
+      fontSize: '13px',
+    },
+    flowchart: { htmlLabels: true, curve: 'basis', padding: 12 },
+    sequence: { actorMargin: 40, messageMargin: 30, fontSize: 12 },
+    er: { fontSize: 12 },
+  });
+</script>
+</body>
+</html>

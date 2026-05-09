@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — National E-Voting System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="toast-container"></div>
+  <nav class="navbar" id="main-navbar">
+    <a href="/" class="navbar-brand">
+      <div class="navbar-emblem">🏛️</div>
+      <div class="navbar-title"><span>National E-Voting</span><span>ADMIN PANEL</span></div>
+    </a>
+    <div class="navbar-actions" id="navbar-auth"></div>
+  </nav>
+
+  <div class="page-wrapper" style="position:relative; z-index:1;">
+    <div class="container">
+      <div style="padding:24px 0 20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h1 style="font-size:26px; font-weight:800;">⚙️ Administration Panel</h1>
+            <div class="text-muted text-sm">National Electoral Commission — Restricted Access</div>
+          </div>
+          <span class="badge badge-active">🛡️ Admin Session</span>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-grid" style="margin-bottom:28px;">
+        <div class="stat-card">
+          <div class="stat-number text-blue" id="stat-voters">—</div>
+          <div class="stat-label">Registered Voters</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number text-gold" id="stat-elections">—</div>
+          <div class="stat-label">Elections</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number text-green" id="stat-votes">—</div>
+          <div class="stat-label">Total Votes Cast</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="stat-parties">—</div>
+          <div class="stat-label">Parties</div>
+        </div>
+      </div>
+
+      <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+          <div class="card card-sm">
+            <button class="admin-nav-item active" data-section="elections">
+              <span class="nav-icon">🗳️</span> Elections
+            </button>
+            <button class="admin-nav-item" data-section="voters">
+              <span class="nav-icon">👥</span> Voters
+            </button>
+            <button class="admin-nav-item" data-section="logs">
+              <span class="nav-icon">📋</span> Audit Logs
+            </button>
+            <div class="divider"></div>
+            <a href="/dashboard.html" class="admin-nav-item" style="text-decoration:none;">
+              <span class="nav-icon">🏠</span> Back to Portal
+            </a>
+          </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="admin-content">
+          <!-- ═══ Elections Section ═══ -->
+          <div id="section-elections">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+              <h3>Manage Elections</h3>
+              <button id="create-election-btn-open" class="btn btn-primary btn-sm">+ Create Election</button>
+            </div>
+            <div id="elections-list" class="card"><div class="text-muted text-sm">Loading...</div></div>
+          </div>
+
+          <!-- ═══ Voters Section ═══ -->
+          <div id="section-voters" class="hidden">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+              <h3>Voter Registry</h3>
+              <button id="add-voter-btn-open" class="btn btn-primary btn-sm">+ Add Voter</button>
+            </div>
+            <div class="card">
+              <div style="overflow-x:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Full Name</th>
+                      <th>Voter ID</th>
+                      <th>District</th>
+                      <th>State</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="voters-tbody">
+                    <tr><td colspan="6" class="text-muted">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ Audit Logs Section ═══ -->
+          <div id="section-logs" class="hidden">
+            <div class="card">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                <h3>Recent Audit Logs</h3>
+                <button id="refresh-logs-btn" class="btn btn-ghost btn-sm">🔄 Refresh</button>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Action</th><th>Performed By</th><th>Details</th><th>IP</th><th>Time</th></tr>
+                  </thead>
+                  <tbody id="logs-tbody">
+                    <tr><td colspan="5" class="text-muted">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Election Modal -->
+  <div class="modal-overlay hidden" id="create-election-modal">
+    <div class="modal" style="max-width:600px;">
+      <div class="modal-header"><div class="modal-title">🗳️ Create New Election</div></div>
+      <form id="create-election-form">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Election Title</label>
+            <input type="text" class="form-control" id="el-title" placeholder="e.g. General Election 2024" required>
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" id="el-desc" rows="2" placeholder="Brief description..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Start Date & Time</label>
+            <input type="datetime-local" class="form-control" id="el-start" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Date & Time</label>
+            <input type="datetime-local" class="form-control" id="el-end" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Candidates (JSON)</label>
+          <textarea class="form-control" id="el-candidates" rows="6" required
+            style="font-family:monospace; font-size:12px;"
+          >[
+  {"id":"c1","name":"Candidate Name","party":"Party Name","party_id":"","symbol":"🏛️","color":"#3b82f6"}
+]</textarea>
+          <div class="form-hint">Provide candidates as a JSON array. Each must have id, name, party, symbol, color.</div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-election-modal" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="create-election-btn">
+            <span class="spinner"></span>
+            <span class="btn-text">Create Election</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Voter Modal -->
+  <div class="modal-overlay hidden" id="add-voter-modal">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">👤 Add Eligible Voter</div></div>
+      <form id="add-voter-form">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="v-name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Voter ID Number</label>
+            <input type="text" class="form-control" id="v-id" placeholder="ECI0012345" required style="text-transform:uppercase;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="text" class="form-control" id="v-phone" placeholder="+91-9876543210" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email (optional)</label>
+            <input type="email" class="form-control" id="v-email">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date of Birth</label>
+            <input type="date" class="form-control" id="v-dob" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Gender</label>
+            <select class="form-control" id="v-gender">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">District</label>
+            <input type="text" class="form-control" id="v-district" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">State</label>
+            <input type="text" class="form-control" id="v-state" required>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-voter-modal" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="add-voter-btn">
+            <span class="spinner"></span><span class="btn-text">Add Voter</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

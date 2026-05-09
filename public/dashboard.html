@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voter Dashboard — National E-Voting System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="toast-container"></div>
+  <nav class="navbar" id="main-navbar">
+    <a href="/" class="navbar-brand">
+      <div class="navbar-emblem">🏛️</div>
+      <div class="navbar-title"><span>National E-Voting</span><span>SECURE · OFFICIAL</span></div>
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="/" data-page="home">🏠 Home</a></li>
+      <li><a href="/parties.html" data-page="parties">🏛️ Parties</a></li>
+      <li><a href="/results.html" data-page="results">📊 Results</a></li>
+      <li><a href="/audit.html" data-page="audit">🔒 Audit</a></li>
+    </ul>
+    <div class="navbar-actions" id="navbar-auth"></div>
+  </nav>
+
+  <div class="page-wrapper" style="position:relative; z-index:1;">
+    <div class="container">
+      <!-- Dashboard Header -->
+      <div class="dash-header">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div class="dash-greeting">Welcome back, <span id="voter-name">Voter</span>! 👋</div>
+            <div class="dash-meta" id="voter-meta">Verified Voter · Loading...</div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <span class="badge badge-active">✅ Identity Verified</span>
+            <button id="dash-logout-btn" class="btn btn-ghost btn-sm">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voter Info Card -->
+      <div id="voter-card" class="card" style="margin-bottom:28px; display:none;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px;">
+          <div>
+            <div class="text-xs text-muted" style="letter-spacing:1px; margin-bottom:4px;">VOTER ID</div>
+            <div class="font-bold font-mono text-gold" id="voter-id-display">—</div>
+          </div>
+          <div>
+            <div class="text-xs text-muted" style="letter-spacing:1px; margin-bottom:4px;">DISTRICT</div>
+            <div class="font-bold" id="voter-district">—</div>
+          </div>
+          <div>
+            <div class="text-xs text-muted" style="letter-spacing:1px; margin-bottom:4px;">STATE</div>
+            <div class="font-bold" id="voter-state">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-grid" id="stats-grid" style="margin-bottom:32px;">
+        <div class="stat-card">
+          <div class="stat-number text-blue" id="stat-active">—</div>
+          <div class="stat-label">Active Elections</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number text-green" id="stat-voted">—</div>
+          <div class="stat-label">Votes Cast</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number text-gold" id="stat-upcoming">—</div>
+          <div class="stat-label">Upcoming Elections</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="stat-closed">—</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+
+      <!-- Elections Section -->
+      <div style="margin-bottom:48px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+          <h2 style="font-size:22px; font-weight:800;">Elections</h2>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-ghost btn-sm filter-btn active" data-filter="all">All</button>
+            <button class="btn btn-ghost btn-sm filter-btn" data-filter="active">🟢 Active</button>
+            <button class="btn btn-ghost btn-sm filter-btn" data-filter="upcoming">🟡 Upcoming</button>
+            <button class="btn btn-ghost btn-sm filter-btn" data-filter="closed">⚫ Closed</button>
+          </div>
+        </div>
+
+        <div id="elections-loading" style="text-align:center; padding:60px;">
+          <div class="loading-spinner-large" style="margin:0 auto 20px;"></div>
+          <div class="text-muted">Loading elections...</div>
+        </div>
+        <div class="elections-grid" id="elections-grid" style="display:none;"></div>
+        <div id="no-elections" class="hidden" style="text-align:center; padding:60px; color:var(--text-muted);">
+          <div style="font-size:48px; margin-bottom:16px;">🗳️</div>
+          <div>No elections found for this filter.</div>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="card" style="margin-bottom:40px;">
+        <h3 style="margin-bottom:16px; font-size:18px;">Quick Actions</h3>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <a href="/parties.html" class="btn btn-ghost">🏛️ Browse Parties & Speeches</a>
+          <a href="/results.html" class="btn btn-ghost">📊 View Election Results</a>
+          <a href="/audit.html" class="btn btn-ghost">🔒 Verify Audit Chain</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
