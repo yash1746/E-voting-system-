@@ -52,7 +52,11 @@ router.post('/apply', async (req, res) => {
     });
   } catch (err) {
     console.error('registration application error:', err);
-    res.status(500).json({ error: 'Failed to submit application. Please try again.' });
+    res.status(500).json({ 
+      error: 'Failed to submit application.', 
+      details: err.message,
+      hint: 'Ensure you have run the latest SQL commands in Supabase to update the voter_applications table.'
+    });
   }
 });
 
