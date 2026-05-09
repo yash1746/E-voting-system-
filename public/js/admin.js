@@ -74,10 +74,11 @@ function switchSection(name) {
   document.querySelectorAll('.admin-nav-item[data-section]').forEach(b => {
     b.classList.toggle('active', b.dataset.section === name);
   });
-  ['elections', 'voters', 'logs'].forEach(s => {
+  ['elections', 'voters', 'applications', 'logs'].forEach(s => {
     document.getElementById(`section-${s}`)?.classList.toggle('hidden', s !== name);
   });
   if (name === 'logs') loadLogs();
+  if (name === 'applications') loadApplications();
 }
 
 // ─── Elections ────────────────────────────────────────────────
@@ -105,17 +106,23 @@ async function loadElections() {
                 ${{
                   active:   '<span class="badge badge-active">🟢 Active</span>',
                   upcoming: '<span class="badge badge-upcoming">🟡 Upcoming</span>',
+                  paused:   '<span class="badge badge-paused" style="background:var(--gold-glass); color:var(--gold);">⏸ Paused</span>',
                   closed:   '<span class="badge badge-closed">⚫ Closed</span>',
                 }[e.status] || ''}
                 ${e.status !== 'closed' ? `
-                  <button
-                    class="btn btn-sm btn-ghost"
-                    data-election-id="${e.id}"
-                    data-new-status="${e.status === 'upcoming' ? 'active' : 'closed'}"
-                  >
-                    ${e.status === 'upcoming' ? '▶ Activate' : '⏹ Close'}
-                  </button>
-                ` : `<a href="/results.html?election=${e.id}" class="btn btn-sm btn-ghost">📊 Results</a>`}
+                  ${e.status === 'upcoming' ? `
+                    <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="active">▶ Activate</button>
+                  ` : e.status === 'active' ? `
+                    <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="paused">⏸ Pause</button>
+                    <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="closed">⏹ Close</button>
+                  ` : e.status === 'paused' ? `
+                    <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="active">▶ Resume</button>
+                    <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="closed">⏹ Close</button>
+                  ` : ''}
+                ` : `
+                  <a href="/results.html?election=${e.id}" class="btn btn-sm btn-ghost">📊 Results</a>
+                  <button class="btn btn-sm btn-ghost" data-export-id="${e.id}">📥 Export CSV</button>
+                `}
               </div>
             </div>
           </div>
@@ -123,16 +130,56 @@ async function loadElections() {
       </div>
     `;
 
-    // Wire status change buttons via event delegation (no onclick=)
+    // Wire buttons via event delegation
     container.addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-election-id]');
-      if (!btn) return;
-      await changeStatus(btn.dataset.electionId, btn.dataset.newStatus);
+      const statusBtn = e.target.closest('[data-election-id]');
+      if (statusBtn) {
+        await changeStatus(statusBtn.dataset.electionId, statusBtn.dataset.newStatus);
+        return;
+      }
+
+      const exportBtn = e.target.closest('[data-export-id]');
+      if (exportBtn) {
+        await handleExport(exportBtn.dataset.exportId);
+      }
     });
 
   } catch (err) {
     document.getElementById('elections-list').innerHTML =
       `<div class="alert alert-error"><span class="alert-icon">⚠️</span>${err.message}</div>`;
+  }
+}
+
+async function handleExport(id) {
+  try {
+    const data = await api.get(`/results/${id}`);
+    const results = data.results;
+    const title = data.election.title;
+
+    const rows = [
+      ['Candidate Name', 'Party', 'Symbol', 'Vote Count', 'Percentage'],
+      ...results.map(r => [
+        r.name,
+        r.party,
+        r.symbol,
+        r.vote_count,
+        ((r.vote_count / data.total_votes) * 100).toFixed(2) + '%'
+      ])
+    ];
+
+    const csvContent = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `results_${title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('success', 'Exported', 'CSV downloaded successfully.');
+  } catch (err) {
+    showToast('error', 'Export Failed', err.message);
   }
 }
 
@@ -156,12 +203,16 @@ async function handleCreateElection(e) {
     try { candidates = JSON.parse(document.getElementById('el-candidates').value); }
     catch { showToast('error', 'Invalid JSON', 'Please check your candidates JSON.'); setBtnLoading(btn, false); return; }
 
+    const stateSelect = document.getElementById('el-states');
+    const eligible_states = Array.from(stateSelect.selectedOptions).map(option => option.value);
+
     await api.post('/elections', {
       title:       document.getElementById('el-title').value.trim(),
       description: document.getElementById('el-desc').value.trim(),
       start_date:  document.getElementById('el-start').value,
       end_date:    document.getElementById('el-end').value,
       candidates,
+      eligible_states,
     });
 
     showToast('success', 'Created!', 'Election created successfully.');
@@ -223,6 +274,58 @@ async function toggleVoter(id) {
     await api.patch(`/admin/voters/${id}/toggle`, {});
     showToast('success', 'Updated', 'Voter status changed.');
     loadVoters();
+  } catch (err) {
+    showToast('error', 'Error', err.message);
+  }
+}
+
+// ─── Applications ─────────────────────────────────────────────
+async function loadApplications() {
+  try {
+    const data = await api.get('/register/pending');
+    const apps = data.applications || [];
+    const tbody = document.getElementById('apps-tbody');
+
+    if (!apps.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-muted" style="text-align:center; padding:40px;">No pending applications found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = apps.map(app => `
+      <tr>
+        <td><span class="font-bold">${app.full_name}</span></td>
+        <td><span class="font-mono text-blue text-sm">${app.voter_id_number}</span></td>
+        <td>${app.state} / ${app.district}</td>
+        <td>${new Date(app.applied_at).toLocaleDateString()}</td>
+        <td>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-sm btn-primary" data-app-id="${app.id}" data-action="approved">Approve</button>
+            <button class="btn btn-sm btn-ghost" data-app-id="${app.id}" data-action="rejected">Reject</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    // Wire buttons via event delegation
+    tbody.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-app-id]');
+      if (!btn) return;
+      await reviewApp(btn.dataset.appId, btn.dataset.action);
+    });
+
+  } catch (err) {
+    showToast('error', 'Error', 'Failed to load applications.');
+  }
+}
+
+async function reviewApp(id, action) {
+  if (!confirm(`Are you sure you want to ${action} this application?`)) return;
+  try {
+    await api.post('/register/review', { id, action });
+    showToast('success', 'Done', `Application ${action} successfully.`);
+    loadApplications();
+    loadStats();
+    if (action === 'approved') loadVoters();
   } catch (err) {
     showToast('error', 'Error', err.message);
   }

@@ -10,13 +10,23 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const { data: elections, error } = await supabase
       .from('elections')
-      .select('id, title, description, candidates, start_date, end_date, status, eligible_districts')
+      .select('id, title, description, candidates, start_date, end_date, status, eligible_districts, eligible_states')
       .order('start_date', { ascending: false });
 
     if (error) throw error;
 
+    // Filter by state if voter role
+    const filteredElections = req.role === 'admin' ? elections : elections.filter(e => {
+      if (!e.eligible_states || e.eligible_states.length === 0) return true;
+      return e.eligible_states.includes(req.voter.state);
+    });
+
+    if (filteredElections.length === 0) {
+      return res.json({ elections: [] });
+    }
+
     // For each election, check if this voter has already voted
-    const electionIds = elections.map(e => e.id);
+    const electionIds = filteredElections.map(e => e.id);
     const { data: receipts } = await supabase
       .from('vote_receipts')
       .select('election_id')
@@ -25,7 +35,7 @@ router.get('/', requireAuth, async (req, res) => {
 
     const votedSet = new Set((receipts || []).map(r => r.election_id));
 
-    const enriched = elections.map(e => ({
+    const enriched = filteredElections.map(e => ({
       ...e,
       has_voted: votedSet.has(e.id),
       candidate_count: Array.isArray(e.candidates) ? e.candidates.length : 0,
@@ -85,7 +95,7 @@ router.get('/:id', requireAuth, async (req, res) => {
  */
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { title, description, candidates, start_date, end_date, eligible_districts } = req.body;
+    const { title, description, candidates, start_date, end_date, eligible_districts, eligible_states } = req.body;
 
     if (!title || !candidates || !start_date || !end_date) {
       return res.status(400).json({ error: 'Title, candidates, start date, and end date are required.' });
@@ -100,6 +110,7 @@ router.post('/', requireAdmin, async (req, res) => {
         start_date,
         end_date,
         eligible_districts: eligible_districts || [],
+        eligible_states: eligible_states || [],
         status: new Date(start_date) <= new Date() ? 'active' : 'upcoming',
         created_by: req.voter.voter_id_number,
       })
@@ -128,7 +139,7 @@ router.post('/', requireAdmin, async (req, res) => {
 router.patch('/:id/status', requireAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    if (!['upcoming', 'active', 'closed'].includes(status)) {
+    if (!['upcoming', 'active', 'paused', 'closed'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status.' });
     }
 

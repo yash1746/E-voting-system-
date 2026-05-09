@@ -103,6 +103,11 @@ function renderElections() {
           <span>📅 ${formatDate(e.end_date)}</span>
           ${e.status === 'active' ? `<span style="color:var(--green);">⏱ ${timeUntil(e.end_date)}</span>` : ''}
         </div>
+        <div style="margin-top:8px;">
+          ${!e.eligible_states || e.eligible_states.length === 0 
+            ? '<span class="badge badge-active" style="background:var(--blue-glass); border-color:var(--blue);">🌐 National</span>' 
+            : `<span class="badge badge-upcoming" style="background:var(--gold-glass); border-color:var(--gold);">📍 ${e.eligible_states.join(', ')}</span>`}
+        </div>
         <div class="election-actions">${actionBtn}</div>
       </div>
     `;

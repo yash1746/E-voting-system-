@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voter Registration — National E-Voting System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="toast-container"></div>
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">
+      <div class="navbar-emblem">🏛️</div>
+      <div class="navbar-title"><span>National E-Voting</span><span>SECURE · OFFICIAL</span></div>
+    </a>
+  </nav>
+
+  <div class="page-wrapper">
+    <div class="container" style="max-width: 600px; padding: 40px 20px;">
+      <div class="card">
+        <div style="text-align:center; margin-bottom:24px;">
+          <div class="section-badge">Citizen Portal</div>
+          <h1 style="margin-top:12px; font-size:24px;">Apply for Voter Registration</h1>
+          <p class="text-secondary">Your application will be reviewed by the Electoral Commission.</p>
+        </div>
+
+        <form id="register-form">
+          <div class="form-group">
+            <label class="form-label">Full Name (as per ID)</label>
+            <input type="text" id="reg-name" class="form-control" placeholder="e.g. Rahul Sharma" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Voter ID Number</label>
+            <input type="text" id="reg-id" class="form-control" placeholder="e.g. ECI0001234" required>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="reg-phone" class="form-control" placeholder="+91 98765 43210" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date of Birth</label>
+              <input type="date" id="reg-dob" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email Address (optional)</label>
+            <input type="email" id="reg-email" class="form-control" placeholder="rahul@example.com">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">State</label>
+              <select id="reg-state" class="form-control" required>
+                <option value="">Select State</option>
+                <option value="Andhra Pradesh">Andhra Pradesh</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Maharashtra">Maharashtra</option>
+                <option value="Uttar Pradesh">Uttar Pradesh</option>
+                <option value="West Bengal">West Bengal</option>
+                <option value="Karnataka">Karnataka</option>
+                <option value="Tamil Nadu">Tamil Nadu</option>
+                <option value="Gujarat">Gujarat</option>
+                <!-- Simplified for now -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">District</label>
+              <input type="text" id="reg-district" class="form-control" placeholder="e.g. Central Delhi" required>
+            </div>
+          </div>
+
+          <div class="alert alert-info" style="margin:20px 0;">
+            <span class="alert-icon">ℹ️</span>
+            <div class="text-sm">By submitting, you declare that all provided information is accurate and you are a legal citizen eligible to vote.</div>
+          </div>
+
+          <button type="submit" id="submit-btn" class="btn btn-primary w-full" style="padding:14px;">
+            <span class="spinner"></span>
+            <span class="btn-text">Submit Application</span>
+          </button>
+        </form>
+
+        <div style="text-align:center; margin-top:20px;">
+          <a href="/login.html" class="text-sm text-blue">Already registered? Log in here →</a>
+        </div>
+      </div>
+      
+      <div id="success-msg" class="hidden" style="text-align:center; padding:40px 0;">
+        <div style="font-size:64px; margin-bottom:20px;">✅</div>
+        <h2>Application Submitted!</h2>
+        <p class="text-secondary" style="margin:16px 0 24px;">
+          Your application for <strong><span id="display-id"></span></strong> has been received. 
+          The Electoral Commission will review your details shortly.
+        </p>
+        <a href="/" class="btn btn-primary">Return to Homepage</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const form = document.getElementById('register-form');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setBtnLoading(submitBtn, true, 'Submitting...');
+
+      try {
+        const body = {
+          full_name:       document.getElementById('reg-name').value.trim(),
+          voter_id_number: document.getElementById('reg-id').value.trim().toUpperCase(),
+          phone:           document.getElementById('reg-phone').value.trim(),
+          email:           document.getElementById('reg-email').value.trim() || null,
+          date_of_birth:   document.getElementById('reg-dob').value,
+          state:           document.getElementById('reg-state').value,
+          district:        document.getElementById('reg-district').value.trim(),
+        };
+
+        const res = await api.post('/register/apply', body);
+        
+        document.getElementById('display-id').textContent = body.voter_id_number;
+        form.classList.add('hidden');
+        document.getElementById('success-msg').classList.remove('hidden');
+        showToast('success', 'Submitted!', 'Your application is being reviewed.');
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      } finally {
+        setBtnLoading(submitBtn, false);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -49,8 +49,9 @@ create table if not exists elections (
   candidates jsonb not null default '[]',  -- [{id, name, party, party_id, symbol}]
   start_date timestamptz not null,
   end_date timestamptz not null,
-  status text default 'upcoming' check (status in ('upcoming','active','closed')),
+  status text default 'upcoming' check (status in ('upcoming','active','paused','closed')),
   eligible_districts text[] default '{}',  -- Empty = all districts
+  eligible_states text[] default '{}',     -- Empty = all states (National)
   created_by text,
   created_at timestamptz default now()
 );
@@ -165,6 +166,27 @@ drop policy if exists "Service role full access" on parties;
 drop policy if exists "Service role full access" on party_actions;
 drop policy if exists "Service role full access" on party_speeches;
 drop policy if exists "Service role full access" on audit_logs;
+
+create table if not exists voter_applications (
+  id uuid primary key default uuid_generate_v4(),
+  full_name text not null,
+  voter_id_number text not null,
+  phone text not null,
+  email text,
+  date_of_birth date not null,
+  district text not null,
+  state text not null,
+  status text default 'pending' check (status in ('pending','approved','rejected')),
+  applied_at timestamptz default now(),
+  reviewed_by text,
+  reviewed_at timestamptz
+);
+
+alter table voter_applications enable row level security;
+drop policy if exists "Anyone can apply" on voter_applications;
+create policy "Anyone can apply" on voter_applications for insert with check (true);
+drop policy if exists "Service role full access" on voter_applications;
+create policy "Service role full access" on voter_applications for all using (true);
 
 create policy "Service role full access" on eligible_voters for all using (true);
 create policy "Service role full access" on voter_sessions for all using (true);

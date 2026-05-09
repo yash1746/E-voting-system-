@@ -21,7 +21,7 @@ router.post('/:electionId', requireAuth, async (req, res) => {
     // 1. Check election exists and is active
     const { data: election, error: electionError } = await supabase
       .from('elections')
-      .select('id, title, candidates, status, start_date, end_date')
+      .select('id, title, candidates, status, start_date, end_date, eligible_states')
       .eq('id', electionId)
       .single();
 
@@ -33,6 +33,13 @@ router.post('/:electionId', requireAuth, async (req, res) => {
     }
     if (new Date(election.end_date) < new Date()) {
       return res.status(400).json({ error: 'This election has ended.' });
+    }
+
+    // Check state eligibility
+    if (election.eligible_states && election.eligible_states.length > 0) {
+      if (!election.eligible_states.includes(req.voter.state)) {
+        return res.status(403).json({ error: 'You are not eligible to vote in this election based on your registered state.' });
+      }
     }
 
     // 2. Validate candidate

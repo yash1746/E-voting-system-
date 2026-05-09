@@ -5,6 +5,8 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const cron = require('node-cron');
+const { supabase } = require('./config/supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -70,6 +72,7 @@ app.use('/api/vote', require('./routes/voteRoutes'));
 app.use('/api/results', require('./routes/resultsRoutes'));
 app.use('/api/parties', require('./routes/partyRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/register', require('./routes/registrationRoutes'));
 
 // ─── Health Check ───────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -105,6 +108,41 @@ app.listen(PORT, () => {
     console.warn('⚠️  WARNING: Supabase not configured. Update your .env file!');
     console.warn('   Get your keys from: https://supabase.com → Project Settings → API\n');
   }
+
+  // ─── Auto Status Scheduler ──────────────────────────────────
+  // Checks every minute for elections that should change status
+  cron.schedule('* * * * *', async () => {
+    const now = new Date().toISOString();
+
+    try {
+      // 1. Auto-activate upcoming elections whose start_date has passed
+      const { data: activated, error: activateError } = await supabase
+        .from('elections')
+        .update({ status: 'active' })
+        .eq('status', 'upcoming')
+        .lte('start_date', now)
+        .select('id, title');
+      
+      if (activated?.length) {
+        activated.forEach(e => console.log(`[Scheduler] Election Activated: ${e.title}`));
+      }
+
+      // 2. Auto-close active elections whose end_date has passed
+      const { data: closed, error: closeError } = await supabase
+        .from('elections')
+        .update({ status: 'closed' })
+        .eq('status', 'active')
+        .lte('end_date', now)
+        .select('id, title');
+
+      if (closed?.length) {
+        closed.forEach(e => console.log(`[Scheduler] Election Closed: ${e.title}`));
+      }
+
+    } catch (err) {
+      console.error('[Scheduler] Error updating election statuses:', err);
+    }
+  });
 });
 
 module.exports = app;

@@ -124,6 +124,19 @@ async function submitVote() {
     document.getElementById('vote-hash').textContent    = data.vote_hash.slice(0, 32) + '...';
     receiptTokenNew = data.receipt_token;
 
+    // Generate QR Code
+    try {
+      const qrUrl = `${window.location.origin}/audit.html?token=${data.receipt_token}`;
+      QRCode.toCanvas(document.getElementById('qr-canvas'), qrUrl, {
+        width: 160,
+        margin: 1,
+        color: { dark: '#1a3c6e', light: '#ffffff' }
+      });
+      document.getElementById('receipt-qr').classList.remove('hidden');
+    } catch (qrErr) {
+      console.error('QR Gen failed:', qrErr);
+    }
+
     document.getElementById('step-choose').classList.add('hidden');
     document.getElementById('step-receipt').classList.remove('hidden');
     showToast('success', 'Vote Cast! 🎉', 'Your anonymous ballot has been recorded.');
