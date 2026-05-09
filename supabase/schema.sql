@@ -197,3 +197,15 @@ create policy "Service role full access" on parties for all using (true);
 create policy "Service role full access" on party_actions for all using (true);
 create policy "Service role full access" on party_speeches for all using (true);
 create policy "Service role full access" on audit_logs for all using (true);
+-- ============================================================
+-- INITIAL SEED DATA
+-- ============================================================
+INSERT INTO eligible_voters (full_name, voter_id_number, phone, email, district, state, date_of_birth, is_active)
+VALUES 
+('Admin User', 'ADMIN00001', '+91-9000000000', 'admin@evoting.gov.in', 'New Delhi', 'Delhi', '1980-01-01', true),
+('Rajesh Sharma', 'ECI0001234', '+91-9876543210', 'rajesh@example.com', 'New Delhi', 'Delhi', '1985-03-15', true)
+ON CONFLICT (voter_id_number) DO UPDATE SET is_active = true;
+
+-- Ensure election status constraint includes 'paused'
+ALTER TABLE elections DROP CONSTRAINT IF EXISTS elections_status_check;
+ALTER TABLE elections ADD CONSTRAINT elections_status_check CHECK (status IN ('upcoming', 'active', 'paused', 'closed'));
