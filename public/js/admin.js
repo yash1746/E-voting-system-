@@ -294,7 +294,7 @@ async function loadApplications() {
     tbody.innerHTML = apps.map(app => `
       <tr>
         <td><span class="font-bold">${app.full_name}</span></td>
-        <td><span class="font-mono text-blue text-sm">${app.voter_id_number}</span></td>
+        <td><span class="font-mono text-blue text-sm">${app.voter_id_number || 'New Application'}</span></td>
         <td>${app.state} / ${app.district}</td>
         <td>${new Date(app.applied_at).toLocaleDateString()}</td>
         <td>
