@@ -170,7 +170,7 @@ drop policy if exists "Service role full access" on audit_logs;
 create table if not exists voter_applications (
   id uuid primary key default uuid_generate_v4(),
   full_name text not null,
-  voter_id_number text not null,
+  voter_id_number text, -- Allocated upon approval or provided for reference
   phone text not null,
   email text,
   date_of_birth date not null,

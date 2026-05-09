@@ -3,54 +3,53 @@ const router = express.Router();
 const { supabase } = require('../config/supabase');
 const { requireAdmin } = require('../middleware/auth');
 
+function generateVoterID() {
+  const digits = Math.floor(1000000 + Math.random() * 9000000); // 7 digits
+  return `ECI${digits}`;
+}
+
 /**
  * POST /api/register/apply — Public: Submit voter application
  */
 router.post('/apply', async (req, res) => {
   try {
-    const { full_name, voter_id_number, phone, email, date_of_birth, district, state } = req.body;
+    const { full_name, phone, email, date_of_birth, district, state } = req.body;
 
-    if (!full_name || !voter_id_number || !phone || !date_of_birth || !district || !state) {
+    if (!full_name || !phone || !date_of_birth || !district || !state) {
       return res.status(400).json({ error: 'All fields except email are required.' });
     }
 
-    // Check if voter ID already exists in applications or registry
-    const { data: existingApp } = await supabase
-      .from('voter_applications')
-      .select('id')
-      .eq('voter_id_number', voter_id_number)
-      .eq('status', 'pending')
-      .single();
-
-    if (existingApp) {
-      return res.status(409).json({ error: 'An application for this Voter ID is already pending.' });
-    }
-
+    // Check if phone already exists in registry
     const { data: existingVoter } = await supabase
       .from('eligible_voters')
       .select('id')
-      .eq('voter_id_number', voter_id_number)
+      .eq('phone', phone)
       .single();
 
     if (existingVoter) {
-      return res.status(409).json({ error: 'This Voter ID is already registered in the system.' });
+      return res.status(409).json({ error: 'This phone number is already registered.' });
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('voter_applications')
       .insert({
         full_name,
-        voter_id_number,
         phone,
         email,
         date_of_birth,
         district,
         state,
-      });
+      })
+      .select('id')
+      .single();
 
     if (error) throw error;
 
-    return res.json({ success: true, message: 'Application submitted successfully. An administrator will review it shortly.' });
+    return res.json({ 
+      success: true, 
+      message: 'Application submitted successfully.',
+      application_id: data.id 
+    });
   } catch (err) {
     console.error('registration application error:', err);
     res.status(500).json({ error: 'Failed to submit application. Please try again.' });
@@ -95,12 +94,15 @@ router.post('/review', requireAdmin, async (req, res) => {
     if (fetchError || !app) return res.status(404).json({ error: 'Application not found.' });
 
     if (action === 'approved') {
-      // 1. Add to eligible_voters
+      // 1. Generate new Voter ID
+      const newVoterID = generateVoterID();
+
+      // 2. Add to eligible_voters
       const { error: insertError } = await supabase
         .from('eligible_voters')
         .insert({
           full_name: app.full_name,
-          voter_id_number: app.voter_id_number,
+          voter_id_number: newVoterID,
           phone: app.phone,
           email: app.email,
           date_of_birth: app.date_of_birth,
@@ -110,9 +112,15 @@ router.post('/review', requireAdmin, async (req, res) => {
         });
 
       if (insertError) throw insertError;
+
+      // 3. Update application with the allocated ID
+      await supabase
+        .from('voter_applications')
+        .update({ voter_id_number: newVoterID })
+        .eq('id', id);
     }
 
-    // 2. Update application status
+    // 4. Update application status
     const { error: updateError } = await supabase
       .from('voter_applications')
       .update({
@@ -124,11 +132,11 @@ router.post('/review', requireAdmin, async (req, res) => {
 
     if (updateError) throw updateError;
 
-    // 3. Log audit
+    // 5. Log audit
     await supabase.from('audit_logs').insert({
       action: `VOTER_REGISTRATION_${action.toUpperCase()}`,
       performed_by: req.voter.voter_id_number,
-      details: { voter_id_number: app.voter_id_number, application_id: id },
+      details: { voter_id_number: app.voter_id_number || 'ALLOCATED', application_id: id },
       ip_address: req.ip,
     });
 

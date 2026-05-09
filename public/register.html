@@ -30,10 +30,7 @@
             <input type="text" id="reg-name" class="form-control" placeholder="e.g. Rahul Sharma" required>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Voter ID Number</label>
-            <input type="text" id="reg-id" class="form-control" placeholder="e.g. ECI0001234" required>
-          </div>
+
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div class="form-group">
@@ -93,8 +90,8 @@
         <div style="font-size:64px; margin-bottom:20px;">✅</div>
         <h2>Application Submitted!</h2>
         <p class="text-secondary" style="margin:16px 0 24px;">
-          Your application for <strong><span id="display-id"></span></strong> has been received. 
-          The Electoral Commission will review your details shortly.
+          Your application (Ref: <strong><span id="display-id"></span></strong>) has been received. 
+          Upon approval, the Electoral Commission will allocate your unique Voter ID and notify you.
         </p>
         <a href="/" class="btn btn-primary">Return to Homepage</a>
       </div>
@@ -113,7 +110,6 @@
       try {
         const body = {
           full_name:       document.getElementById('reg-name').value.trim(),
-          voter_id_number: document.getElementById('reg-id').value.trim().toUpperCase(),
           phone:           document.getElementById('reg-phone').value.trim(),
           email:           document.getElementById('reg-email').value.trim() || null,
           date_of_birth:   document.getElementById('reg-dob').value,
@@ -123,7 +119,7 @@
 
         const res = await api.post('/register/apply', body);
         
-        document.getElementById('display-id').textContent = body.voter_id_number;
+        document.getElementById('display-id').textContent = res.application_id.slice(0, 8).toUpperCase();
         form.classList.add('hidden');
         document.getElementById('success-msg').classList.remove('hidden');
         showToast('success', 'Submitted!', 'Your application is being reviewed.');
