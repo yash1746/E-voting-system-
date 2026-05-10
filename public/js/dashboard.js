@@ -1,10 +1,9 @@
-// Dashboard page logic
-let allElections = [];
-let currentFilter = 'all';
+let currentUser = null;
 
 async function init() {
   const user = await Auth.requireAuth();
   if (!user) return;
+  currentUser = user;
 
   initNavbar('dashboard');
 
@@ -13,12 +12,9 @@ async function init() {
     ?.addEventListener('click', () => Auth.logout());
 
   // Fill voter info
-  document.getElementById('voter-name').textContent = user.full_name.split(' ')[0];
-  document.getElementById('voter-meta').textContent = `${user.voter_id_number} · ${user.district}, ${user.state}`;
-  document.getElementById('voter-id-display').textContent = user.voter_id_number;
-  document.getElementById('voter-district').textContent = user.district;
-  document.getElementById('voter-state').textContent = user.state;
-  document.getElementById('voter-card').style.display = 'block';
+  document.getElementById('highlight-state').textContent = user.state.toUpperCase();
+  document.getElementById('highlight-district').textContent = user.district;
+  document.getElementById('highlight-voter-id').textContent = `ID: ${user.voter_id_number}`;
 
   await loadElections();
 }
@@ -30,7 +26,7 @@ async function loadElections() {
     updateStats();
     renderElections();
     document.getElementById('elections-loading').style.display = 'none';
-    document.getElementById('elections-grid').style.display = 'grid';
+    document.getElementById('state-elections-grid').style.display = 'grid';
   } catch (err) {
     document.getElementById('elections-loading').innerHTML = `
       <div class="alert alert-error"><span class="alert-icon">⚠️</span>${err.message}</div>
@@ -51,67 +47,74 @@ function updateStats() {
 }
 
 function renderElections() {
-  const grid = document.getElementById('elections-grid');
-  const noEl = document.getElementById('no-elections');
+  const stateGrid = document.getElementById('state-elections-grid');
+  const otherGrid = document.getElementById('other-elections-grid');
+  const noState   = document.getElementById('no-state-elections');
+
   const filtered = currentFilter === 'all'
     ? allElections
     : allElections.filter(e => e.status === currentFilter);
 
-  if (!filtered.length) {
-    grid.innerHTML = '';
-    noEl.classList.remove('hidden');
-    return;
-  }
-  noEl.classList.add('hidden');
+  // Split elections
+  const myStateElections = filtered.filter(e => 
+    (e.eligible_states || []).includes(currentUser.state)
+  );
+  
+  const otherElections = filtered.filter(e => 
+    !(e.eligible_states || []).includes(currentUser.state)
+  );
 
-  grid.innerHTML = filtered.map(e => {
+  noState.classList.toggle('hidden', myStateElections.length > 0);
+  
+  const renderCard = (e) => {
     const statusBadge = {
       active:   '<span class="badge badge-active">🟢 Active</span>',
       upcoming: '<span class="badge badge-upcoming">🟡 Upcoming</span>',
       closed:   '<span class="badge badge-closed">⚫ Closed</span>',
     }[e.status] || '';
 
-    const votedBadge = e.has_voted
-      ? '<span class="badge badge-voted">✅ Voted</span>'
-      : '';
+    const votedBadge = e.has_voted ? '<span class="badge badge-voted">✅ Voted</span>' : '';
 
     const actionBtn = (() => {
-      if (e.status === 'active' && !e.has_voted) {
-        return `<a href="/vote.html?election=${e.id}" class="btn btn-primary">🗳️ Vote Now</a>`;
-      }
-      if (e.has_voted) {
-        return `<a href="/vote.html?election=${e.id}" class="btn btn-ghost btn-sm">View Receipt</a>`;
-      }
-      if (e.status === 'closed') {
-        return `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`;
-      }
+      if (e.status === 'active' && !e.has_voted) return `<a href="/vote.html?election=${e.id}" class="btn btn-primary">🗳️ Vote Now</a>`;
+      if (e.has_voted) return `<a href="/vote.html?election=${e.id}" class="btn btn-ghost btn-sm">View Receipt</a>`;
+      if (e.status === 'closed') return `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`;
       return `<button class="btn btn-ghost btn-sm" disabled>⏳ Not Yet Open</button>`;
     })();
+
+    // Swap title with election_type and show original title below
+    const mainTitle = e.election_type || 'General Election';
+    const subTitle = e.title;
 
     return `
       <div class="election-card ${e.status === 'active' ? 'active-election' : ''}">
         <div class="election-card-header">
-          <div class="election-title">${e.title}</div>
+          <div>
+            <div class="election-title" style="font-size:20px; color:var(--text-primary);">${mainTitle}</div>
+            <div style="font-size:12px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; margin-top:2px;">${subTitle}</div>
+          </div>
           <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
             ${statusBadge}
             ${votedBadge}
           </div>
         </div>
-        <div class="election-desc">${(e.description || '').slice(0, 120)}${e.description?.length > 120 ? '…' : ''}</div>
+        <div class="election-desc">${(e.description || '').slice(0, 100)}${e.description?.length > 100 ? '…' : ''}</div>
         <div class="election-meta">
           <span>🏛️ ${e.candidate_count} candidates</span>
           <span>📅 ${formatDate(e.end_date)}</span>
-          ${e.status === 'active' ? `<span style="color:var(--green);">⏱ ${timeUntil(e.end_date)}</span>` : ''}
         </div>
-        <div style="margin-top:8px;">
+        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
           ${!e.eligible_states || e.eligible_states.length === 0 
-            ? '<span class="badge badge-active" style="background:var(--blue-glass); border-color:var(--blue);">🌐 National</span>' 
-            : `<span class="badge badge-upcoming" style="background:var(--gold-glass); border-color:var(--gold);">📍 ${e.eligible_states.join(', ')}</span>`}
+            ? '<span class="badge badge-active" style="background:var(--blue-glass); border-color:var(--blue); font-size:10px;">🌐 National</span>' 
+            : `<span class="badge badge-upcoming" style="background:var(--gold-glass); border-color:var(--gold); font-size:10px;">📍 ${e.eligible_states.join(', ')}</span>`}
+          ${actionBtn}
         </div>
-        <div class="election-actions">${actionBtn}</div>
       </div>
     `;
-  }).join('');
+  };
+
+  stateGrid.innerHTML = myStateElections.map(renderCard).join('');
+  otherGrid.innerHTML = otherElections.map(renderCard).join('');
 }
 
 // Filter buttons

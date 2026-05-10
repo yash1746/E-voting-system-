@@ -24,40 +24,25 @@
 
   <div class="page-wrapper" style="position:relative; z-index:1;">
     <div class="container">
-      <!-- Dashboard Header -->
-      <div class="dash-header">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+      <!-- Voter Identity Highlight -->
+      <div id="voter-highlight" class="card" style="margin-bottom:32px; border-left:6px solid var(--blue); background:linear-gradient(90deg, rgba(59,130,246,0.1), transparent);">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
           <div>
-            <div class="dash-greeting">Welcome back, <span id="voter-name">Voter</span>! 👋</div>
-            <div class="dash-meta" id="voter-meta">Verified Voter · Loading...</div>
+            <div class="text-xs text-muted" style="letter-spacing:2px; margin-bottom:8px; text-transform:uppercase;">REGISTERED JURISDICTION</div>
+            <div style="display:flex; align-items:baseline; gap:12px;">
+              <div id="highlight-state" style="font-size:36px; font-weight:800; color:var(--text-primary); line-height:1;">LOADING...</div>
+              <div id="highlight-district" style="font-size:18px; color:var(--text-secondary); font-weight:500;">...</div>
+            </div>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <span class="badge badge-active">✅ Identity Verified</span>
-            <button id="dash-logout-btn" class="btn btn-ghost btn-sm">Logout</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Voter Info Card -->
-      <div id="voter-card" class="card" style="margin-bottom:28px; display:none;">
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px;">
-          <div>
-            <div class="text-xs text-muted" style="letter-spacing:1px; margin-bottom:4px;">VOTER ID</div>
-            <div class="font-bold font-mono text-gold" id="voter-id-display">—</div>
-          </div>
-          <div>
-            <div class="text-xs text-muted" style="letter-spacing:1px; margin-bottom:4px;">DISTRICT</div>
-            <div class="font-bold" id="voter-district">—</div>
-          </div>
-          <div>
-            <div class="text-xs text-muted" style="letter-spacing:1px; margin-bottom:4px;">STATE</div>
-            <div class="font-bold" id="voter-state">—</div>
+          <div style="text-align:right;">
+            <div class="badge badge-active" style="font-size:14px; padding:8px 16px;">✅ ELIGIBLE VOTER</div>
+            <div class="text-xs text-muted" style="margin-top:8px;" id="highlight-voter-id">...</div>
           </div>
         </div>
       </div>
 
       <!-- Quick Stats -->
-      <div class="stats-grid" id="stats-grid" style="margin-bottom:32px;">
+      <div class="stats-grid" id="stats-grid" style="margin-bottom:40px;">
         <div class="stat-card">
           <div class="stat-number text-blue" id="stat-active">—</div>
           <div class="stat-label">Active Elections</div>
@@ -76,15 +61,17 @@
         </div>
       </div>
 
-      <!-- Elections Section -->
-      <div style="margin-bottom:48px;">
+      <!-- Main Elections Section (State Specific) -->
+      <div style="margin-bottom:56px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
-          <h2 style="font-size:22px; font-weight:800;">Elections</h2>
+          <div>
+            <h2 style="font-size:24px; font-weight:800;">Elections for your State</h2>
+            <p class="text-sm text-muted">Elections specifically targeting your registered region.</p>
+          </div>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-ghost btn-sm filter-btn active" data-filter="all">All</button>
             <button class="btn btn-ghost btn-sm filter-btn" data-filter="active">🟢 Active</button>
             <button class="btn btn-ghost btn-sm filter-btn" data-filter="upcoming">🟡 Upcoming</button>
-            <button class="btn btn-ghost btn-sm filter-btn" data-filter="closed">⚫ Closed</button>
           </div>
         </div>
 
@@ -92,11 +79,21 @@
           <div class="loading-spinner-large" style="margin:0 auto 20px;"></div>
           <div class="text-muted">Loading elections...</div>
         </div>
-        <div class="elections-grid" id="elections-grid" style="display:none;"></div>
-        <div id="no-elections" class="hidden" style="text-align:center; padding:60px; color:var(--text-muted);">
-          <div style="font-size:48px; margin-bottom:16px;">🗳️</div>
-          <div>No elections found for this filter.</div>
+        
+        <div class="elections-grid" id="state-elections-grid" style="display:none;"></div>
+        
+        <div id="no-state-elections" class="hidden" style="text-align:center; padding:40px; background:var(--bg-glass); border-radius:var(--radius);">
+          <div class="text-muted">No state-specific elections found at this time.</div>
         </div>
+      </div>
+
+      <!-- Other Elections Section (National / Other States) -->
+      <div id="section-other-elections" style="margin-bottom:56px;">
+        <div style="margin-bottom:24px;">
+          <h2 style="font-size:20px; font-weight:700; color:var(--text-secondary);">National & Other Elections</h2>
+          <p class="text-sm text-muted">General national elections or polls from other jurisdictions.</p>
+        </div>
+        <div class="elections-grid" id="other-elections-grid"></div>
       </div>
 
       <!-- Quick Links -->
