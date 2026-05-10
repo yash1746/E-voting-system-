@@ -251,15 +251,12 @@ async function handleCreateElection(e) {
   setBtnLoading(btn, true, 'Creating...');
   try {
     const candidateRows = document.querySelectorAll('.candidate-row');
-    const candidates = Array.from(candidateRows).map((row, index) => {
-      const partySelect = row.querySelector('.cand-party-select');
-      const selectedPartyId = partySelect.value;
+    const candidates = Array.from(candidateRows).map(row => {
+      const selectedPartyId = row.querySelector('.cand-party-select').value;
       const party = allParties.find(p => p.id === selectedPartyId);
-      
       return {
-        id: `c${index + 1}`,
+        constituency: row.querySelector('.cand-constituency').value.trim(),
         name: row.querySelector('.cand-name').value.trim(),
-        party: party ? party.name : 'Independent',
         party_id: selectedPartyId,
         symbol: party ? party.symbol_emoji : '👤',
         color: party ? party.color : '#64748b'
@@ -314,8 +311,8 @@ async function loadVoters() {
       <tr>
         <td><span class="font-bold">${v.full_name}</span></td>
         <td><span class="font-mono text-gold text-sm">${v.voter_id_number}</span></td>
-        <td>${v.district}</td>
         <td>${v.state}</td>
+        <td>${v.constituency || '—'}</td>
         <td>${v.is_active
           ? '<span class="badge badge-active">Active</span>'
           : '<span class="badge badge-closed">Inactive</span>'}</td>
@@ -407,16 +404,18 @@ async function handleAddVoter(e) {
   const btn = document.getElementById('add-voter-btn');
   setBtnLoading(btn, true, 'Adding...');
   try {
-    await api.post('/admin/voters', {
+    const voterData = {
       full_name:       document.getElementById('v-name').value.trim(),
       voter_id_number: document.getElementById('v-id').value.trim().toUpperCase(),
       phone:           document.getElementById('v-phone').value.trim(),
-      email:           document.getElementById('v-email').value.trim() || null,
+      email:           document.getElementById('v-email').value.trim(),
       date_of_birth:   document.getElementById('v-dob').value,
       gender:          document.getElementById('v-gender').value,
       district:        document.getElementById('v-district').value.trim(),
       state:           document.getElementById('v-state').value.trim(),
-    });
+      constituency:    document.getElementById('v-constituency').value.trim(),
+    };
+    await api.post('/admin/voters', voterData);
     showToast('success', 'Voter Added!', 'The voter has been added to the registry.');
     closeModal('add-voter-modal');
     document.getElementById('add-voter-form').reset();
@@ -495,12 +494,13 @@ function addCandidateRow() {
   const container = document.getElementById('candidates-container');
   const div = document.createElement('div');
   div.className = 'candidate-row';
-  div.style = 'display: grid; grid-template-columns: 1.5fr 1.5fr 40px; gap: 8px; margin-bottom: 8px; align-items: center;';
+  div.style = 'display: grid; grid-template-columns: 140px 1fr 1fr 40px; gap: 8px; margin-bottom: 8px; align-items: center;';
   
   // Create party options based on current state selection
   const options = getEligiblePartyOptions();
   
   div.innerHTML = `
+    <input type="text" class="form-control cand-constituency" placeholder="Constituency" required>
     <input type="text" class="form-control cand-name" placeholder="Candidate Name" required>
     <select class="form-control cand-party-select" required>
       <option value="">Select Party</option>

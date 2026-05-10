@@ -40,7 +40,19 @@ async function init() {
       return;
     }
 
-    renderCandidates(election.candidates || []);
+    const isInfoMode = params.get('info') === 'true';
+    let candidates = election.candidates || [];
+    
+    if (!isInfoMode) {
+      // Filter candidates for the voter's specific constituency
+      candidates = candidates.filter(c => c.constituency === user.constituency);
+      
+      if (candidates.length === 0) {
+        showToast('info', 'No Candidates', `No candidates found for your constituency (${user.constituency}).`);
+      }
+    }
+
+    renderCandidates(candidates);
     showState('vote-section');
   } catch (err) {
     showToast('error', 'Error', err.message);
@@ -67,6 +79,7 @@ function renderCandidates(candidates) {
         <span class="candidate-party-dot" style="background:${c.color || '#3b82f6'}"></span>
         ${c.party}
       </div>
+      <div class="text-xs text-muted" style="margin-top:4px; font-weight:600;">📍 ${c.constituency || 'General'}</div>
       <div style="margin-top:14px;">
         <a href="/parties.html?party=${c.party_id}" class="btn btn-ghost btn-sm" target="_blank">
           🏛️ View Party Info

@@ -18,7 +18,7 @@ router.post('/verify-voter', async (req, res) => {
 
     const { data: voter, error } = await supabase
       .from('eligible_voters')
-      .select('id, full_name, phone, email, voter_id_number, district, state, is_active')
+      .select('id, full_name, phone, email, voter_id_number, district, state, constituency, is_active')
       .eq('voter_id_number', voter_id.trim().toUpperCase())
       .single();
 
@@ -48,6 +48,7 @@ router.post('/verify-voter', async (req, res) => {
       full_name: voter.full_name,
       district: voter.district,
       state: voter.state,
+      constituency: voter.constituency,
       masked_phone: maskedPhone,
       masked_email: maskedEmail,
       delivery_method: voter.email ? 'email' : 'phone',
@@ -249,6 +250,7 @@ router.get('/me', async (req, res) => {
       voter_id_number: voter.voter_id_number,
       district: voter.district,
       state: voter.state,
+      constituency: voter.constituency,
     },
     role: session.role,
   });

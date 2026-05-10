@@ -25,14 +25,24 @@ router.get('/voters', requireAdmin, async (req, res) => {
  */
 router.post('/voters', requireAdmin, async (req, res) => {
   try {
-    const { full_name, voter_id_number, phone, email, district, state, date_of_birth, gender } = req.body;
-    if (!full_name || !voter_id_number || !phone || !district || !state || !date_of_birth) {
+    const { full_name, voter_id_number, phone, email, district, state, constituency, date_of_birth, gender } = req.body;
+    if (!full_name || !voter_id_number || !phone || !district || !state || !date_of_birth || !constituency) {
       return res.status(400).json({ error: 'All required fields must be provided.' });
     }
 
     const { data, error } = await supabase
       .from('eligible_voters')
-      .insert({ full_name, voter_id_number: voter_id_number.toUpperCase(), phone, email, district, state, date_of_birth, gender })
+      .insert({ 
+        full_name, 
+        voter_id_number: voter_id_number.toUpperCase(), 
+        phone, 
+        email, 
+        district, 
+        state, 
+        constituency,
+        date_of_birth, 
+        gender 
+      })
       .select()
       .single();
 

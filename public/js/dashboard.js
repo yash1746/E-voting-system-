@@ -16,7 +16,7 @@ async function init() {
 
   // Fill voter info
   document.getElementById('highlight-state').textContent = user.state.toUpperCase();
-  document.getElementById('highlight-district').textContent = user.district;
+  document.getElementById('highlight-district').textContent = `${user.district} · ${user.constituency || 'No Constituency'}`;
   document.getElementById('highlight-voter-id').textContent = `ID: ${user.voter_id_number}`;
 
   // Other state filter listener

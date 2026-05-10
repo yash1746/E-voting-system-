@@ -17,6 +17,7 @@ create table if not exists eligible_voters (
   email text,                               -- Optional email for OTP fallback
   district text not null,
   state text not null,
+  constituency text,                     -- Parliamentary or Assembly constituency
   date_of_birth date not null,
   gender text check (gender in ('male','female','other')),
   is_active boolean default true,           -- Can be deactivated by admin
@@ -46,7 +47,7 @@ create table if not exists elections (
   id uuid primary key default uuid_generate_v4(),
   title text not null,
   description text,
-  candidates jsonb not null default '[]',  -- [{id, name, party, party_id, symbol}]
+  candidates jsonb default '[]',           -- Array of {constituency, name, party, symbol, color}
   start_date timestamptz not null,
   end_date timestamptz not null,
   status text default 'upcoming' check (status in ('upcoming','active','paused','closed')),
