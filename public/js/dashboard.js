@@ -1,4 +1,7 @@
 let currentUser = null;
+let allElections = [];
+let currentFilter = 'all';
+let otherStateFilter = 'all';
 
 async function init() {
   const user = await Auth.requireAuth();
@@ -15,6 +18,12 @@ async function init() {
   document.getElementById('highlight-state').textContent = user.state.toUpperCase();
   document.getElementById('highlight-district').textContent = user.district;
   document.getElementById('highlight-voter-id').textContent = `ID: ${user.voter_id_number}`;
+
+  // Other state filter listener
+  document.getElementById('other-state-filter')?.addEventListener('change', (e) => {
+    otherStateFilter = e.target.value;
+    renderElections();
+  });
 
   await loadElections();
 }
@@ -60,13 +69,22 @@ function renderElections() {
     (e.eligible_states || []).includes(currentUser.state)
   );
   
-  const otherElections = filtered.filter(e => 
+  let otherElections = filtered.filter(e => 
     !(e.eligible_states || []).includes(currentUser.state)
   );
 
+  // Apply other state filter
+  if (otherStateFilter !== 'all') {
+    if (otherStateFilter === 'National') {
+      otherElections = otherElections.filter(e => !e.eligible_states || e.eligible_states.length === 0);
+    } else {
+      otherElections = otherElections.filter(e => (e.eligible_states || []).includes(otherStateFilter));
+    }
+  }
+
   noState.classList.toggle('hidden', myStateElections.length > 0);
   
-  const renderCard = (e) => {
+  const renderCard = (e, isMyState) => {
     const statusBadge = {
       active:   '<span class="badge badge-active">🟢 Active</span>',
       upcoming: '<span class="badge badge-upcoming">🟡 Upcoming</span>',
@@ -76,13 +94,19 @@ function renderElections() {
     const votedBadge = e.has_voted ? '<span class="badge badge-voted">✅ Voted</span>' : '';
 
     const actionBtn = (() => {
-      if (e.status === 'active' && !e.has_voted) return `<a href="/vote.html?election=${e.id}" class="btn btn-primary">🗳️ Vote Now</a>`;
-      if (e.has_voted) return `<a href="/vote.html?election=${e.id}" class="btn btn-ghost btn-sm">View Receipt</a>`;
+      // ONLY allow voting if it's the voter's state
+      if (isMyState) {
+        if (e.status === 'active' && !e.has_voted) return `<a href="/vote.html?election=${e.id}" class="btn btn-primary">🗳️ Vote Now</a>`;
+        if (e.has_voted) return `<a href="/vote.html?election=${e.id}" class="btn btn-ghost btn-sm">View Receipt</a>`;
+      } else {
+        // For other states, only allow viewing info/results
+        if (e.status === 'closed') return `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`;
+        return `<button class="btn btn-ghost btn-sm" onclick="showInfo('${e.id}')">ℹ️ View Info</button>`;
+      }
       if (e.status === 'closed') return `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`;
       return `<button class="btn btn-ghost btn-sm" disabled>⏳ Not Yet Open</button>`;
     })();
 
-    // Swap title with election_type and show original title below
     const mainTitle = e.election_type || 'General Election';
     const subTitle = e.title;
 
@@ -91,7 +115,7 @@ function renderElections() {
         <div class="election-card-header">
           <div>
             <div class="election-title" style="font-size:20px; color:var(--text-primary);">${mainTitle}</div>
-            <div style="font-size:12px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; margin-top:2px;">${subTitle}</div>
+            <div style="font-size:11px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; margin-top:2px;">${subTitle}</div>
           </div>
           <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
             ${statusBadge}
@@ -103,18 +127,23 @@ function renderElections() {
           <span>🏛️ ${e.candidate_count} candidates</span>
           <span>📅 ${formatDate(e.end_date)}</span>
         </div>
-        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
           ${!e.eligible_states || e.eligible_states.length === 0 
             ? '<span class="badge badge-active" style="background:var(--blue-glass); border-color:var(--blue); font-size:10px;">🌐 National</span>' 
-            : `<span class="badge badge-upcoming" style="background:var(--gold-glass); border-color:var(--gold); font-size:10px;">📍 ${e.eligible_states.join(', ')}</span>`}
-          ${actionBtn}
+            : `<span class="badge badge-upcoming" style="background:var(--gold-glass); border-color:var(--gold); font-size:10px;">📍 ${e.eligible_states[0]}${e.eligible_states.length > 1 ? '...' : ''}</span>`}
+          <div style="flex-grow:1; display:flex; justify-content:flex-end;">${actionBtn}</div>
         </div>
       </div>
     `;
   };
 
-  stateGrid.innerHTML = myStateElections.map(renderCard).join('');
-  otherGrid.innerHTML = otherElections.map(renderCard).join('');
+  stateGrid.innerHTML = myStateElections.map(e => renderCard(e, true)).join('');
+  otherGrid.innerHTML = otherElections.map(e => renderCard(e, false)).join('');
+}
+
+function showInfo(id) {
+  // Redirect to vote page but it will be in view-only mode if not eligible
+  window.location.href = `/vote.html?election=${id}&info=true`;
 }
 
 // Filter buttons
