@@ -58,6 +58,9 @@
             <button class="admin-nav-item" data-section="voters">
               <span class="nav-icon">👥</span> Voters
             </button>
+            <button class="admin-nav-item" data-section="candidates">
+              <span class="nav-icon">🏛️</span> Manage Candidates
+            </button>
             <button class="admin-nav-item" data-section="parties">
               <span class="nav-icon">🏛️</span> Parties
             </button>
@@ -171,6 +174,62 @@
             </div>
           </div>
 
+          <!-- ═══ Candidates Management Section ═══ -->
+          <div id="section-candidates" class="hidden">
+            <div style="margin-bottom:24px;">
+              <h3 style="font-size:20px; font-weight:700;">🗳️ Manage Candidates</h3>
+              <p class="text-sm text-muted">Assign candidates to specific constituencies for active elections.</p>
+            </div>
+            
+            <div class="card" style="margin-bottom:20px;">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="form-group">
+                  <label class="form-label">Select Election</label>
+                  <select class="form-control" id="cand-election-select">
+                    <option value="">Select an election...</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Constituency</label>
+                  <div style="display:flex; gap:8px;">
+                    <select class="form-control" id="cand-constituency-select" style="flex-grow:1;">
+                      <option value="">Select Constituency...</option>
+                    </select>
+                    <button class="btn btn-ghost btn-sm" id="btn-add-new-const" title="Add custom constituency">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="constituency-candidates-view" class="hidden">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h4 id="active-constituency-name" style="font-size:18px; font-weight:600; color:var(--gold);">...</h4>
+                <button class="btn btn-primary btn-sm" id="btn-open-add-cand-modal">+ Add Candidate</button>
+              </div>
+              
+              <div class="card">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Candidate Name</th>
+                      <th>Party</th>
+                      <th>Symbol</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="const-candidates-tbody">
+                    <!-- Candidates will be loaded here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="no-election-selected" style="text-align:center; padding:60px; color:var(--text-muted);">
+              <div style="font-size:48px; margin-bottom:16px;">🗳️</div>
+              <div>Select an election and constituency to manage candidates.</div>
+            </div>
+          </div>
+
           <!-- ═══ Audit Logs Section ═══ -->
           <div id="section-logs" class="hidden">
             <div class="card">
@@ -268,28 +327,8 @@
             <div class="form-hint">Hold Ctrl/Cmd to select multiple states.</div>
           </div>
         </div>
-        <div class="form-group" style="margin-top: 10px;">
-          <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>Candidates</span>
-            <button type="button" class="btn btn-ghost btn-sm" id="add-candidate-btn" style="padding: 4px 8px;">+ Add Candidate</button>
-          </label>
-          <!-- Column headers -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; padding: 0 10px 4px; font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase;">
-            <span>Candidate Name</span>
-            <span>Party Name</span>
-            <span title="Enter an emoji to represent the party, e.g. 🌿 ⚡ 🔵">Symbol 🙂</span>
-            <span></span>
-          </div>
-          <div id="candidates-container" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; background: rgba(0,0,0,0.05);">
-            <!-- Candidate rows will be added here -->
-            <div class="candidate-row" style="display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; margin-bottom: 8px;">
-              <input type="text" class="form-control cand-name" placeholder="e.g. Arun Mehta" required>
-              <input type="text" class="form-control cand-party" placeholder="e.g. PNA" required>
-              <input type="text" class="form-control cand-symbol" placeholder="🌿" title="Party emoji symbol (e.g. 🌿 ⚡ 🔵 ❤️ 🌱)" maxlength="2" required>
-              <button type="button" class="btn btn-ghost remove-cand-btn" style="color: var(--red); padding: 0;">✕</button>
-            </div>
-          </div>
-          <div class="form-hint">Symbol: enter any emoji to represent the party on the ballot (e.g. 🌿 ⚡ 🔵 ❤️ 🌱).</div>
+        <div class="form-hint" style="margin-top:16px; padding:12px; background:rgba(255,255,255,0.05); border-radius:var(--radius-sm); color:var(--gold);">
+          💡 After creating this election, go to <b>"Manage Candidates"</b> in the sidebar to add candidates to specific constituencies.
         </div>
 
         <div class="modal-actions">
@@ -439,5 +478,29 @@
 
   <script src="/js/app.js"></script>
   <script src="/js/admin.js"></script>
+  <!-- Add Candidate to Constituency Modal -->
+  <div class="modal-overlay hidden" id="add-candidate-const-modal">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header"><div class="modal-title">🏛️ Add Candidate</div></div>
+      <form id="add-candidate-const-form">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-control" id="m-cand-name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Political Party</label>
+          <select class="form-control" id="m-cand-party" required>
+            <option value="">Select Party</option>
+            <option value="independent">Independent</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-cand-modal" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-cand-const">Save Candidate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </body>
 </html>

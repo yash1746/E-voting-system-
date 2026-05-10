@@ -107,12 +107,13 @@ function switchSection(name, logFilter = null) {
   document.querySelectorAll('.admin-nav-item[data-section]').forEach(b => {
     b.classList.toggle('active', b.dataset.section === name);
   });
-  ['elections', 'voters', 'parties', 'applications', 'logs'].forEach(s => {
+  ['elections', 'voters', 'candidates', 'parties', 'applications', 'logs'].forEach(s => {
     document.getElementById(`section-${s}`)?.classList.toggle('hidden', s !== name);
   });
   if (name === 'logs') loadLogs(logFilter);
   if (name === 'applications') loadApplications();
   if (name === 'parties') loadParties();
+  if (name === 'candidates') loadElectionsForCandidateMgmt();
 }
 
 // ─── Elections ────────────────────────────────────────────────
@@ -250,23 +251,6 @@ async function handleCreateElection(e) {
   const btn = document.getElementById('submit-election-btn');
   setBtnLoading(btn, true, 'Creating...');
   try {
-    const candidateRows = document.querySelectorAll('.candidate-row');
-    const candidates = Array.from(candidateRows).map(row => {
-      const selectedPartyId = row.querySelector('.cand-party-select').value;
-      const party = allParties.find(p => p.id === selectedPartyId);
-      return {
-        constituency: row.querySelector('.cand-constituency').value.trim(),
-        name: row.querySelector('.cand-name').value.trim(),
-        party_id: selectedPartyId,
-        symbol: party ? party.symbol_emoji : '👤',
-        color: party ? party.color : '#64748b'
-      };
-    });
-
-    if (candidates.some(c => !c.name)) {
-      throw new Error('Please fill in all candidate names.');
-    }
-
     const stateSelect = document.getElementById('el-states');
     const eligible_states = Array.from(stateSelect.selectedOptions).map(option => option.value);
 
@@ -278,7 +262,7 @@ async function handleCreateElection(e) {
       election_type: elType,
       start_date:  document.getElementById('el-start').value,
       end_date:    document.getElementById('el-end').value,
-      candidates,
+      candidates:  [],
       eligible_states,
     });
 
@@ -661,4 +645,194 @@ function unselectState(selectId, stateValue) {
   
   // Trigger change event manually
   select.dispatchEvent(new Event('change'));
+}
+
+// ─── Candidates Management ─────────────────────────────────────
+let mgmtElections = [];
+let mgmtActiveElectionId = null;
+let mgmtActiveConstituency = null;
+
+const CONSTITUENCY_MAP = {
+  'Delhi': {
+    'Lok Sabha (MP)': ['Chandni Chowk', 'East Delhi', 'New Delhi', 'North East Delhi', 'North West Delhi', 'South Delhi', 'West Delhi'],
+    'Vidhan Sabha (MLA)': ['Adarsh Nagar', 'Badarpur', 'Chandni Chowk', 'Dwarka', 'Karol Bagh', 'Model Town', 'Najafgarh', 'Okhla', 'Patparganj', 'Rajouri Garden', 'Saket']
+  },
+  'Uttar Pradesh': {
+    'Lok Sabha (MP)': ['Lucknow', 'Varanasi', 'Amethi', 'Raebareli', 'Gorakhpur', 'Agra', 'Meerut', 'Kanpur'],
+  }
+};
+
+async function loadElectionsForCandidateMgmt() {
+  const select = document.getElementById('cand-election-select');
+  const res = await api.get('/elections');
+  mgmtElections = res.elections || [];
+  
+  select.innerHTML = '<option value="">Select an election...</option>' + 
+    mgmtElections.map(e => `<option value="${e.id}">${e.title} (${e.status.toUpperCase()})</option>`).join('');
+
+  // Wire events once
+  if (!select.dataset.wired) {
+    select.addEventListener('change', handleMgmtElectionChange);
+    document.getElementById('cand-constituency-select').addEventListener('change', handleMgmtConstituencyChange);
+    document.getElementById('btn-open-add-cand-modal').addEventListener('click', () => {
+      document.getElementById('add-candidate-const-modal').classList.remove('hidden');
+      updateMgmtPartyOptions();
+    });
+    document.getElementById('cancel-cand-modal').addEventListener('click', () => closeModal('add-candidate-const-modal'));
+    document.getElementById('add-candidate-const-form').addEventListener('submit', handleAddCandidatePerConst);
+    document.getElementById('btn-add-new-const').addEventListener('click', () => {
+      const name = prompt('Enter new constituency name:');
+      if (name) {
+        const sel = document.getElementById('cand-constituency-select');
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+        sel.value = name;
+        handleMgmtConstituencyChange();
+      }
+    });
+    select.dataset.wired = "true";
+  }
+}
+
+function handleMgmtElectionChange(e) {
+  const id = e.target.value;
+  mgmtActiveElectionId = id;
+  const election = mgmtElections.find(el => el.id === id);
+  
+  const constSelect = document.getElementById('cand-constituency-select');
+  const view = document.getElementById('constituency-candidates-view');
+  const empty = document.getElementById('no-election-selected');
+
+  if (!election) {
+    view.classList.add('hidden');
+    empty.classList.remove('hidden');
+    constSelect.innerHTML = '<option value="">Select Constituency...</option>';
+    return;
+  }
+
+  // Detect constituencies
+  const state = election.eligible_states?.[0] || 'National';
+  const type = election.election_type;
+  let consts = CONSTITUENCY_MAP[state]?.[type] || [];
+  
+  // Also add any already existing constituencies from candidate list
+  const existing = (election.candidates || []).map(c => c.constituency);
+  const combined = Array.from(new Set([...consts, ...existing])).filter(Boolean);
+
+  constSelect.innerHTML = '<option value="">Select Constituency...</option>' + 
+    combined.map(c => `<option value="${c}">${c}</option>`).join('');
+  
+  empty.classList.add('hidden');
+}
+
+function handleMgmtConstituencyChange() {
+  const name = document.getElementById('cand-constituency-select').value;
+  mgmtActiveConstituency = name;
+  const view = document.getElementById('constituency-candidates-view');
+
+  if (!name) {
+    view.classList.add('hidden');
+    return;
+  }
+
+  view.classList.remove('hidden');
+  document.getElementById('active-constituency-name').textContent = `Constituency: ${name}`;
+  renderMgmtCandidates();
+}
+
+function renderMgmtCandidates() {
+  const election = mgmtElections.find(e => e.id === mgmtActiveElectionId);
+  const tbody = document.getElementById('const-candidates-tbody');
+  
+  const filtered = (election.candidates || []).filter(c => c.constituency === mgmtActiveConstituency);
+  
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No candidates added yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(c => `
+    <tr>
+      <td><span class="font-bold">${c.name}</span></td>
+      <td>${c.party || 'Independent'}</td>
+      <td style="font-size:20px;">${c.symbol || '👤'}</td>
+      <td>
+        <button class="btn btn-sm btn-ghost" onclick="removeCandidate('${c.id}')" style="color:var(--red);">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateMgmtPartyOptions() {
+  const select = document.getElementById('m-cand-party');
+  const election = mgmtElections.find(e => e.id === mgmtActiveElectionId);
+  if (!election) return;
+
+  const states = election.eligible_states || [];
+  const eligibleParties = allParties.filter(p => {
+    if (!p.eligible_states || p.eligible_states.includes('National')) return true;
+    if (states.length === 0) return true;
+    return states.some(s => p.eligible_states.includes(s));
+  });
+
+  select.innerHTML = '<option value="">Select Party</option>' + 
+    '<option value="independent">Independent</option>' +
+    eligibleParties.map(p => `<option value="${p.id}">${p.abbreviation} - ${p.name}</option>`).join('');
+}
+
+async function handleAddCandidatePerConst(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-save-cand-const');
+  setBtnLoading(btn, true, 'Saving...');
+
+  try {
+    const name = document.getElementById('m-cand-name').value.trim();
+    const partyId = document.getElementById('m-cand-party').value;
+    const election = mgmtElections.find(el => el.id === mgmtActiveElectionId);
+    const party = allParties.find(p => p.id === partyId);
+
+    const newCand = {
+      id: `c_${Date.now()}`,
+      name,
+      constituency: mgmtActiveConstituency,
+      party_id: partyId,
+      party: party ? party.name : 'Independent',
+      symbol: party ? party.symbol_emoji : '👤',
+      color: party ? party.color : '#64748b'
+    };
+
+    const updatedCandidates = [...(election.candidates || []), newCand];
+
+    await api.patch(`/elections/${mgmtActiveElectionId}`, { candidates: updatedCandidates });
+    
+    // Update local state
+    election.candidates = updatedCandidates;
+    
+    showToast('success', 'Saved', 'Candidate added successfully.');
+    closeModal('add-candidate-const-modal');
+    document.getElementById('add-candidate-const-form').reset();
+    renderMgmtCandidates();
+  } catch (err) {
+    showToast('error', 'Error', err.message);
+  } finally {
+    setBtnLoading(btn, false);
+  }
+}
+
+async function removeCandidate(candId) {
+  if (!confirm('Are you sure you want to remove this candidate?')) return;
+  try {
+    const election = mgmtElections.find(e => e.id === mgmtActiveElectionId);
+    const updated = election.candidates.filter(c => c.id !== candId);
+    
+    await api.patch(`/elections/${mgmtActiveElectionId}`, { candidates: updated });
+    election.candidates = updated;
+    
+    renderMgmtCandidates();
+    showToast('success', 'Removed', 'Candidate removed.');
+  } catch (err) {
+    showToast('error', 'Error', err.message);
+  }
 }
