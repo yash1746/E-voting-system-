@@ -8,10 +8,16 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
  */
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { data: elections, error } = await supabase
-      .from('elections')
-      .select('id, title, description, candidates, start_date, end_date, status, election_type, eligible_districts, eligible_states')
-      .order('start_date', { ascending: false });
+    // Try to select with election_type, but fallback if the column doesn't exist yet
+    let query = supabase.from('elections').select('id, title, description, candidates, start_date, end_date, status, election_type, eligible_districts, eligible_states');
+    let { data: elections, error } = await query.order('start_date', { ascending: false });
+
+    if (error && error.message.includes('election_type')) {
+      // Fallback: the user likely hasn't run the SQL to add the column yet
+      const fallback = await supabase.from('elections').select('id, title, description, candidates, start_date, end_date, status, eligible_districts, eligible_states').order('start_date', { ascending: false });
+      elections = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) throw error;
 
@@ -101,24 +107,36 @@ router.post('/', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Title, candidates, start date, and end date are required.' });
     }
 
+    const insertData = {
+      title,
+      description,
+      candidates,
+      start_date,
+      end_date,
+      eligible_districts: eligible_districts || [],
+      eligible_states: eligible_states || [],
+      status: new Date(start_date) <= new Date() ? 'active' : 'upcoming',
+      created_by: req.voter.voter_id_number,
+    };
+
+    if (election_type) insertData.election_type = election_type;
+
     const { data: election, error } = await supabase
       .from('elections')
-      .insert({
-        title,
-        description,
-        candidates,
-        election_type,
-        start_date,
-        end_date,
-        eligible_districts: eligible_districts || [],
-        eligible_states: eligible_states || [],
-        status: new Date(start_date) <= new Date() ? 'active' : 'upcoming',
-        created_by: req.voter.voter_id_number,
-      })
+      .insert(insertData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.message.includes('election_type')) {
+        // Fallback for missing column
+        delete insertData.election_type;
+        const fallback = await supabase.from('elections').insert(insertData).select().single();
+        if (fallback.error) throw fallback.error;
+        return res.json({ success: true, election: fallback.data });
+      }
+      throw error;
+    }
 
     await supabase.from('audit_logs').insert({
       action: 'ELECTION_CREATED',
