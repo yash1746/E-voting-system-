@@ -185,6 +185,34 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
 });
 
 /**
+ * PATCH /api/elections/:id — Admin: Update election
+ */
+router.patch('/:id', requireAdmin, async (req, res) => {
+  try {
+    const { data: election, error } = await supabase
+      .from('elections')
+      .update(req.body)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    await supabase.from('audit_logs').insert({
+      action: 'ELECTION_UPDATED',
+      performed_by: req.voter.voter_id_number,
+      details: { election_id: req.params.id, updated_fields: Object.keys(req.body) },
+      ip_address: req.ip,
+    });
+
+    return res.json({ success: true, election });
+  } catch (err) {
+    console.error('Update election error:', err);
+    res.status(500).json({ error: 'Failed to update election.' });
+  }
+});
+
+/**
  * DELETE /api/elections/:id — Admin: Delete election (only if upcoming)
  */
 router.delete('/:id', requireAdmin, async (req, res) => {
