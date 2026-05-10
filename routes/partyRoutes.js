@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../config/supabase');
+const { requireAdmin } = require('../middleware/auth');
 
 /**
  * GET /api/parties — List all parties
@@ -16,6 +17,46 @@ router.get('/', async (req, res) => {
     return res.json({ parties });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch parties.' });
+  }
+});
+
+/**
+ * POST /api/parties — Create a new party (Admin only)
+ */
+router.post('/', requireAdmin, async (req, res) => {
+  try {
+    const { name, abbreviation, symbol_emoji, description, eligible_states, color } = req.body;
+    
+    if (!name || !abbreviation || !symbol_emoji) {
+      return res.status(400).json({ error: 'Name, abbreviation, and symbol are required.' });
+    }
+
+    const { data, error } = await supabase
+      .from('parties')
+      .insert({
+        name,
+        abbreviation,
+        symbol_emoji,
+        description,
+        eligible_states: eligible_states || [],
+        color: color || '#4f8ef7'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    await supabase.from('audit_logs').insert({
+      action: 'PARTY_REGISTERED',
+      performed_by: req.voter.voter_id_number,
+      details: { party_name: name, abbreviation },
+      ip_address: req.ip,
+    });
+
+    return res.json({ success: true, party: data });
+  } catch (err) {
+    console.error('Create party error:', err);
+    res.status(500).json({ error: 'Failed to register party.' });
   }
 });
 

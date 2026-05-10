@@ -58,8 +58,11 @@
             <button class="admin-nav-item" data-section="voters">
               <span class="nav-icon">👥</span> Voters
             </button>
+            <button class="admin-nav-item" data-section="parties">
+              <span class="nav-icon">🏛️</span> Parties
+            </button>
             <button class="admin-nav-item" data-section="applications">
-              <span class="nav-icon">📝</span> Applications
+              <span class="nav-icon">📄</span> Applications
             </button>
             <button class="admin-nav-item" data-section="logs">
               <span class="nav-icon">📋</span> Audit Logs
@@ -106,6 +109,21 @@
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+
+          <!-- ═══ Parties Section ═══ -->
+          <div id="section-parties" class="hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+              <div>
+                <h3 style="font-size:20px; font-weight:700;">🏛️ Political Parties</h3>
+                <p class="text-sm text-muted">Manage registered political parties and their state eligibility.</p>
+              </div>
+              <button class="btn btn-primary btn-sm" id="create-party-btn-open">+ Add Party</button>
+            </div>
+            <div id="parties-list">
+              <!-- Parties will be loaded here -->
+              <div class="text-muted text-sm">Loading parties...</div>
             </div>
           </div>
 
@@ -184,18 +202,25 @@
           <div class="form-group" style="grid-column:1/-1;">
             <label class="form-label">Target States (Leave empty for National)</label>
             <select class="form-control" id="el-states" multiple style="height: 100px;">
+              <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
               <option value="Andhra Pradesh">Andhra Pradesh</option>
               <option value="Arunachal Pradesh">Arunachal Pradesh</option>
               <option value="Assam">Assam</option>
               <option value="Bihar">Bihar</option>
+              <option value="Chandigarh">Chandigarh</option>
               <option value="Chhattisgarh">Chhattisgarh</option>
+              <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+              <option value="Delhi">Delhi</option>
               <option value="Goa">Goa</option>
               <option value="Gujarat">Gujarat</option>
               <option value="Haryana">Haryana</option>
               <option value="Himachal Pradesh">Himachal Pradesh</option>
+              <option value="Jammu and Kashmir">Jammu and Kashmir</option>
               <option value="Jharkhand">Jharkhand</option>
               <option value="Karnataka">Karnataka</option>
               <option value="Kerala">Kerala</option>
+              <option value="Ladakh">Ladakh</option>
+              <option value="Lakshadweep">Lakshadweep</option>
               <option value="Madhya Pradesh">Madhya Pradesh</option>
               <option value="Maharashtra">Maharashtra</option>
               <option value="Manipur">Manipur</option>
@@ -203,6 +228,7 @@
               <option value="Mizoram">Mizoram</option>
               <option value="Nagaland">Nagaland</option>
               <option value="Odisha">Odisha</option>
+              <option value="Puducherry">Puducherry</option>
               <option value="Punjab">Punjab</option>
               <option value="Rajasthan">Rajasthan</option>
               <option value="Sikkim">Sikkim</option>
@@ -212,7 +238,6 @@
               <option value="Uttar Pradesh">Uttar Pradesh</option>
               <option value="Uttarakhand">Uttarakhand</option>
               <option value="West Bengal">West Bengal</option>
-              <option value="Delhi">Delhi</option>
             </select>
             <div class="form-hint">Hold Ctrl/Cmd to select multiple states.</div>
           </div>
@@ -222,15 +247,23 @@
             <span>Candidates</span>
             <button type="button" class="btn btn-ghost btn-sm" id="add-candidate-btn" style="padding: 4px 8px;">+ Add Candidate</button>
           </label>
+          <!-- Column headers -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; padding: 0 10px 4px; font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase;">
+            <span>Candidate Name</span>
+            <span>Party Name</span>
+            <span title="Enter an emoji to represent the party, e.g. 🌿 ⚡ 🔵">Symbol 🙂</span>
+            <span></span>
+          </div>
           <div id="candidates-container" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; background: rgba(0,0,0,0.05);">
             <!-- Candidate rows will be added here -->
             <div class="candidate-row" style="display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; margin-bottom: 8px;">
-              <input type="text" class="form-control cand-name" placeholder="Name" required>
-              <input type="text" class="form-control cand-party" placeholder="Party" required>
-              <input type="text" class="form-control cand-symbol" placeholder="🏛️" maxlength="2" required>
+              <input type="text" class="form-control cand-name" placeholder="e.g. Arun Mehta" required>
+              <input type="text" class="form-control cand-party" placeholder="e.g. PNA" required>
+              <input type="text" class="form-control cand-symbol" placeholder="🌿" title="Party emoji symbol (e.g. 🌿 ⚡ 🔵 ❤️ 🌱)" maxlength="2" required>
               <button type="button" class="btn btn-ghost remove-cand-btn" style="color: var(--red); padding: 0;">✕</button>
             </div>
           </div>
+          <div class="form-hint">Symbol: enter any emoji to represent the party on the ballot (e.g. 🌿 ⚡ 🔵 ❤️ 🌱).</div>
         </div>
 
         <div class="modal-actions">
@@ -291,6 +324,82 @@
           <button type="button" id="cancel-voter-modal" class="btn btn-ghost">Cancel</button>
           <button type="submit" class="btn btn-primary" id="add-voter-btn">
             <span class="spinner"></span><span class="btn-text">Add Voter</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Party Modal -->
+  <div class="modal-overlay hidden" id="create-party-modal">
+    <div class="modal" style="max-width:600px;">
+      <div class="modal-header"><div class="modal-title">🏛️ Register New Political Party</div></div>
+      <form id="create-party-form">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Party Full Name</label>
+            <input type="text" class="form-control" id="p-name" placeholder="e.g. Progressive National Alliance" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Abbreviation</label>
+            <input type="text" class="form-control" id="p-abbr" placeholder="e.g. PNA" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Symbol Emoji</label>
+            <input type="text" class="form-control" id="p-symbol" placeholder="🌿" maxlength="2" required>
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Eligible States/UTs (Select all that apply)</label>
+            <select class="form-control" id="p-states" multiple style="height: 150px;">
+              <option value="National">National (All States & UTs)</option>
+              <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+              <option value="Andhra Pradesh">Andhra Pradesh</option>
+              <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+              <option value="Assam">Assam</option>
+              <option value="Bihar">Bihar</option>
+              <option value="Chandigarh">Chandigarh</option>
+              <option value="Chhattisgarh">Chhattisgarh</option>
+              <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Goa">Goa</option>
+              <option value="Gujarat">Gujarat</option>
+              <option value="Haryana">Haryana</option>
+              <option value="Himachal Pradesh">Himachal Pradesh</option>
+              <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+              <option value="Jharkhand">Jharkhand</option>
+              <option value="Karnataka">Karnataka</option>
+              <option value="Kerala">Kerala</option>
+              <option value="Ladakh">Ladakh</option>
+              <option value="Lakshadweep">Lakshadweep</option>
+              <option value="Madhya Pradesh">Madhya Pradesh</option>
+              <option value="Maharashtra">Maharashtra</option>
+              <option value="Manipur">Manipur</option>
+              <option value="Meghalaya">Meghalaya</option>
+              <option value="Mizoram">Mizoram</option>
+              <option value="Nagaland">Nagaland</option>
+              <option value="Odisha">Odisha</option>
+              <option value="Puducherry">Puducherry</option>
+              <option value="Punjab">Punjab</option>
+              <option value="Rajasthan">Rajasthan</option>
+              <option value="Sikkim">Sikkim</option>
+              <option value="Tamil Nadu">Tamil Nadu</option>
+              <option value="Telangana">Telangana</option>
+              <option value="Tripura">Tripura</option>
+              <option value="Uttar Pradesh">Uttar Pradesh</option>
+              <option value="Uttarakhand">Uttarakhand</option>
+              <option value="West Bengal">West Bengal</option>
+            </select>
+            <div class="form-hint">Parties will only appear for selection in elections matching these states.</div>
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Ideology / Description</label>
+            <textarea class="form-control" id="p-desc" rows="2" placeholder="Brief ideology or description..."></textarea>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-party-modal" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="add-party-btn">
+            <span class="spinner"></span><span class="btn-text">Register Party</span>
           </button>
         </div>
       </form>

@@ -97,6 +97,7 @@ create table if not exists parties (
   headquarters text,
   ideology text,
   description text,
+  eligible_states text[] default '{}',     -- States where the party is eligible to contest
   created_at timestamptz default now()
 );
 
@@ -205,6 +206,15 @@ VALUES
 ('Admin User', 'ADMIN00001', '+91-9000000000', 'admin@evoting.gov.in', 'New Delhi', 'Delhi', '1980-01-01', true),
 ('Rajesh Sharma', 'ECI0001234', '+91-9876543210', 'rajesh@example.com', 'New Delhi', 'Delhi', '1985-03-15', true)
 ON CONFLICT (voter_id_number) DO UPDATE SET is_active = true;
+
+-- Political Parties Seed
+INSERT INTO parties (name, abbreviation, symbol_emoji, color, description, eligible_states) VALUES
+('Progressive National Alliance', 'PNA', '🌿', '#22c55e', 'Centrist, Development-focused party.', '{"National"}'),
+('Bharatiya Samajwadi Party', 'BSP', '⚡', '#f59e0b', 'Socialist, Rural-focused party.', '{"National"}'),
+('National Reform Congress', 'NRC', '🔵', '#3b82f6', 'Liberal, Economic reform party.', '{"National"}'),
+('Ecological Citizens Party', 'ECP', '🌱', '#10b981', 'Green, Environmental party.', '{"National"}'),
+('People''s Democratic Front', 'PDF', '❤️', '#ef4444', 'Left-wing, Workers rights party.', '{"National"}')
+ON CONFLICT DO NOTHING;
 
 -- Ensure election status constraint includes 'paused'
 ALTER TABLE elections DROP CONSTRAINT IF EXISTS elections_status_check;

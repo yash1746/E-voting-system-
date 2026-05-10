@@ -1,5 +1,6 @@
 // Admin panel logic
 let currentSection = 'elections';
+let allParties = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   // Wire all static button listeners immediately once DOM is ready
@@ -7,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ?.addEventListener('submit', handleCreateElection);
   document.getElementById('add-voter-form')
     ?.addEventListener('submit', handleAddVoter);
+  document.getElementById('create-party-form')
+    ?.addEventListener('submit', handleCreateParty);
 
   // Close modal on overlay click
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -19,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Candidate management in modal
   document.getElementById('add-candidate-btn')
-    ?.addEventListener('click', addCandidateRow);
+    ?.addEventListener('click', () => addCandidateRow());
   
   document.getElementById('candidates-container')
     ?.addEventListener('click', (e) => {
@@ -32,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+
+  // Filter parties when election states change
+  document.getElementById('el-states')?.addEventListener('change', updateCandidatePartyOptions);
 });
 
 async function init() {
@@ -56,12 +62,16 @@ async function init() {
     ?.addEventListener('click', showCreateElectionModal);
   document.getElementById('add-voter-btn-open')
     ?.addEventListener('click', showAddVoterModal);
+  document.getElementById('create-party-btn-open')
+    ?.addEventListener('click', showCreatePartyModal);
   document.getElementById('refresh-logs-btn')
     ?.addEventListener('click', loadLogs);
   document.getElementById('cancel-election-modal')
     ?.addEventListener('click', () => closeModal('create-election-modal'));
   document.getElementById('cancel-voter-modal')
     ?.addEventListener('click', () => closeModal('add-voter-modal'));
+  document.getElementById('cancel-party-modal')
+    ?.addEventListener('click', () => closeModal('create-party-modal'));
 
   // Wire sidebar nav buttons
   document.querySelectorAll('.admin-nav-item[data-section]').forEach(btn => {
@@ -70,6 +80,7 @@ async function init() {
 
   await loadStats();
   await loadElections();
+  await loadParties(); // Preload for candidate selection
   loadVoters();
 }
 
@@ -90,11 +101,12 @@ function switchSection(name) {
   document.querySelectorAll('.admin-nav-item[data-section]').forEach(b => {
     b.classList.toggle('active', b.dataset.section === name);
   });
-  ['elections', 'voters', 'applications', 'logs'].forEach(s => {
+  ['elections', 'voters', 'parties', 'applications', 'logs'].forEach(s => {
     document.getElementById(`section-${s}`)?.classList.toggle('hidden', s !== name);
   });
   if (name === 'logs') loadLogs();
   if (name === 'applications') loadApplications();
+  if (name === 'parties') loadParties();
 }
 
 // ─── Elections ────────────────────────────────────────────────
@@ -216,17 +228,23 @@ async function handleCreateElection(e) {
   setBtnLoading(btn, true, 'Creating...');
   try {
     const candidateRows = document.querySelectorAll('.candidate-row');
-    const candidates = Array.from(candidateRows).map((row, index) => ({
-      id: `c${index + 1}`,
-      name: row.querySelector('.cand-name').value.trim(),
-      party: row.querySelector('.cand-party').value.trim(),
-      symbol: row.querySelector('.cand-symbol').value.trim() || '🏛️',
-      color: '#3b82f6', // Default color
-      party_id: ''
-    }));
+    const candidates = Array.from(candidateRows).map((row, index) => {
+      const partySelect = row.querySelector('.cand-party-select');
+      const selectedPartyId = partySelect.value;
+      const party = allParties.find(p => p.id === selectedPartyId);
+      
+      return {
+        id: `c${index + 1}`,
+        name: row.querySelector('.cand-name').value.trim(),
+        party: party ? party.name : 'Independent',
+        party_id: selectedPartyId,
+        symbol: party ? party.symbol_emoji : '👤',
+        color: party ? party.color : '#64748b'
+      };
+    });
 
-    if (candidates.some(c => !c.name || !c.party)) {
-      throw new Error('Please fill in all candidate names and parties.');
+    if (candidates.some(c => !c.name)) {
+      throw new Error('Please fill in all candidate names.');
     }
 
     const stateSelect = document.getElementById('el-states');
@@ -415,14 +433,8 @@ function showCreateElectionModal() {
   // Reset candidates to 1 default row
   const container = document.getElementById('candidates-container');
   if (container) {
-    container.innerHTML = `
-      <div class="candidate-row" style="display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; margin-bottom: 8px;">
-        <input type="text" class="form-control cand-name" placeholder="Name" required>
-        <input type="text" class="form-control cand-party" placeholder="Party" required>
-        <input type="text" class="form-control cand-symbol" placeholder="🏛️" maxlength="2" required>
-        <button type="button" class="btn btn-ghost remove-cand-btn" style="color: var(--red); padding: 0;">✕</button>
-      </div>
-    `;
+    container.innerHTML = '';
+    addCandidateRow();
   }
 
   const now = new Date();
@@ -436,16 +448,129 @@ function addCandidateRow() {
   const container = document.getElementById('candidates-container');
   const div = document.createElement('div');
   div.className = 'candidate-row';
-  div.style = 'display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; margin-bottom: 8px;';
+  div.style = 'display: grid; grid-template-columns: 1.5fr 1.5fr 40px; gap: 8px; margin-bottom: 8px; align-items: center;';
+  
+  // Create party options based on current state selection
+  const options = getEligiblePartyOptions();
+  
   div.innerHTML = `
-    <input type="text" class="form-control cand-name" placeholder="Name" required>
-    <input type="text" class="form-control cand-party" placeholder="Party" required>
-    <input type="text" class="form-control cand-symbol" placeholder="🏛️" maxlength="2" required>
+    <input type="text" class="form-control cand-name" placeholder="Candidate Name" required>
+    <select class="form-control cand-party-select" required>
+      <option value="">Select Party</option>
+      <option value="independent">Independent / None</option>
+      ${options}
+    </select>
     <button type="button" class="btn btn-ghost remove-cand-btn" style="color: var(--red); padding: 0;">✕</button>
   `;
   container.appendChild(div);
-  // Auto-focus the new name field
   div.querySelector('.cand-name').focus();
+}
+
+function getEligiblePartyOptions() {
+  const stateSelect = document.getElementById('el-states');
+  const selectedStates = Array.from(stateSelect.selectedOptions).map(o => o.value);
+  
+  const eligibleParties = allParties.filter(p => {
+    // If party is National, it's always eligible
+    if (!p.eligible_states || p.eligible_states.includes('National')) return true;
+    
+    // If no states are selected for the election (National target), show all parties
+    if (selectedStates.length === 0) return true;
+
+    // Otherwise, check if party is eligible in any of the selected states
+    return selectedStates.some(s => p.eligible_states.includes(s));
+  });
+
+  return eligibleParties.map(p => `
+    <option value="${p.id}">${p.abbreviation} - ${p.name} (${p.symbol_emoji})</option>
+  `).join('');
+}
+
+function updateCandidatePartyOptions() {
+  const selects = document.querySelectorAll('.cand-party-select');
+  const options = getEligiblePartyOptions();
+  selects.forEach(s => {
+    const currentVal = s.value;
+    s.innerHTML = `
+      <option value="">Select Party</option>
+      <option value="independent">Independent / None</option>
+      ${options}
+    `;
+    s.value = currentVal; // Try to preserve selection
+  });
+}
+
+// ─── Parties ──────────────────────────────────────────────────
+async function loadParties() {
+  try {
+    const data = await api.get('/parties');
+    allParties = data.parties || [];
+    const container = document.getElementById('parties-list');
+    if (!container) return;
+
+    if (!allParties.length) {
+      container.innerHTML = '<div class="text-muted text-sm">No parties registered yet.</div>';
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+        ${allParties.map(p => `
+          <div class="card card-sm" style="border-left: 4px solid ${p.color || 'var(--blue)'};">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div style="font-size:20px; margin-bottom:4px;">${p.symbol_emoji} <span style="font-weight:700;">${p.abbreviation}</span></div>
+                <div style="font-weight:600; font-size:14px;">${p.name}</div>
+              </div>
+              <div class="badge badge-active">${(p.eligible_states || []).includes('National') ? 'National' : (p.eligible_states || []).length + ' States'}</div>
+            </div>
+            <div style="margin-top:12px; font-size:12px; color:var(--text-secondary);">
+              ${p.description ? p.description.slice(0, 80) + '...' : 'No description provided.'}
+            </div>
+            <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:4px;">
+              ${(p.eligible_states || []).slice(0, 3).map(s => `<span style="font-size:10px; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">${s}</span>`).join('')}
+              ${(p.eligible_states || []).length > 3 ? `<span style="font-size:10px;">+${(p.eligible_states || []).length - 3} more</span>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } catch (err) {
+    console.error('loadParties error:', err);
+  }
+}
+
+function showCreatePartyModal() {
+  document.getElementById('create-party-modal').classList.remove('hidden');
+}
+
+async function handleCreateParty(e) {
+  e.preventDefault();
+  const btn = document.getElementById('add-party-btn');
+  setBtnLoading(btn, true, 'Registering...');
+  try {
+    const stateSelect = document.getElementById('p-states');
+    const eligible_states = Array.from(stateSelect.selectedOptions).map(option => option.value);
+
+    await api.post('/parties', {
+      name:            document.getElementById('p-name').value.trim(),
+      abbreviation:    document.getElementById('p-abbr').value.trim(),
+      symbol_emoji:    document.getElementById('p-symbol').value.trim(),
+      description:     document.getElementById('p-desc').value.trim(),
+      eligible_states: eligible_states,
+      color:           '#4f8ef7' // Default color
+    });
+
+    showToast('success', 'Registered!', 'Political party registered successfully.');
+    closeModal('create-party-modal');
+    document.getElementById('create-party-form').reset();
+    loadParties();
+    loadStats();
+  } catch (err) {
+    showToast('error', 'Failed', err.message);
+  } finally {
+    setBtnLoading(btn, false);
+  }
 }
 
 function showAddVoterModal() {
