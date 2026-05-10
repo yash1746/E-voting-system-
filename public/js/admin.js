@@ -36,8 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-  // Filter parties when election states change
-  document.getElementById('el-states')?.addEventListener('change', updateCandidatePartyOptions);
+  // Filter parties and render tags when election states change
+  document.getElementById('el-states')?.addEventListener('change', (e) => {
+    updateCandidatePartyOptions();
+    renderStateTags(e.target, 'el-states-tags');
+  });
+  document.getElementById('p-states')?.addEventListener('change', (e) => {
+    renderStateTags(e.target, 'p-states-tags');
+  });
 });
 
 async function init() {
@@ -276,6 +282,7 @@ async function handleCreateElection(e) {
     showToast('success', 'Created!', 'Election created successfully.');
     closeModal('create-election-modal');
     document.getElementById('create-election-form').reset();
+    document.getElementById('el-states-tags').innerHTML = '';
     loadElections();
     loadStats();
   } catch (err) {
@@ -467,6 +474,10 @@ function showCreateElectionModal() {
     addCandidateRow();
   }
 
+  // Clear tags
+  const tagsContainer = document.getElementById('el-states-tags');
+  if (tagsContainer) tagsContainer.innerHTML = '';
+
   const now = new Date();
   const local = new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   document.getElementById('el-start').value = local;
@@ -594,6 +605,7 @@ async function handleCreateParty(e) {
     showToast('success', 'Registered!', 'Political party registered successfully.');
     closeModal('create-party-modal');
     document.getElementById('create-party-form').reset();
+    document.getElementById('p-states-tags').innerHTML = '';
     loadParties();
     loadStats();
   } catch (err) {
@@ -609,4 +621,38 @@ function showAddVoterModal() {
 
 function closeModal(id) {
   document.getElementById(id).classList.add('hidden');
+}
+// ─── State Selection Tags ─────────────────────────────────────
+function renderStateTags(selectElement, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  const selectedOptions = Array.from(selectElement.selectedOptions).map(o => o.value);
+  
+  if (selectedOptions.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  container.innerHTML = selectedOptions.map(state => `
+    <span class="badge" style="background:rgba(59, 130, 246, 0.1); color:var(--text-primary); border:1px solid var(--border); display:flex; align-items:center; gap:6px; padding:4px 10px; font-size:12px;">
+      ${state}
+      <span style="cursor:pointer; font-weight:bold; font-size:16px; color:var(--red); margin-left:4px;" onclick="unselectState('${selectElement.id}', '${state}')">×</span>
+    </span>
+  `).join('');
+}
+
+function unselectState(selectId, stateValue) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  
+  for (let i = 0; i < select.options.length; i++) {
+    if (select.options[i].value === stateValue) {
+      select.options[i].selected = false;
+      break;
+    }
+  }
+  
+  // Trigger change event manually
+  select.dispatchEvent(new Event('change'));
 }
