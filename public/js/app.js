@@ -110,7 +110,11 @@ function setBtnLoading(btn, loading, text = null) {
   if (loading) {
     btn.classList.add('loading');
     btn.disabled = true;
-    if (text) btn.querySelector('.btn-text').textContent = text;
+    if (text) {
+      const txtEl = btn.querySelector('.btn-text');
+      if (txtEl) txtEl.textContent = text;
+      else btn.textContent = text;
+    }
   } else {
     btn.classList.remove('loading');
     btn.disabled = false;
