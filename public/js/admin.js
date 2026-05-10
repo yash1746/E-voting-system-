@@ -273,10 +273,12 @@ async function handleCreateElection(e) {
     const stateSelect = document.getElementById('el-states');
     const eligible_states = Array.from(stateSelect.selectedOptions).map(option => option.value);
 
+    const elType = document.getElementById('el-type').value;
+
     await api.post('/elections', {
-      title:       document.getElementById('el-title').value.trim(),
+      title:       elType,
       description: document.getElementById('el-desc').value.trim(),
-      election_type: document.getElementById('el-type').value,
+      election_type: elType,
       start_date:  document.getElementById('el-start').value,
       end_date:    document.getElementById('el-end').value,
       candidates,

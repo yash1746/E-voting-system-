@@ -202,23 +202,20 @@
       <form id="create-election-form">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
           <div class="form-group" style="grid-column:1/-1;">
-            <label class="form-label">Election Title</label>
-            <input type="text" class="form-control" id="el-title" placeholder="e.g. General Election 2024" required>
-          </div>
-          <div class="form-group" style="grid-column:1/-1;">
-            <label class="form-label">Description</label>
-            <textarea class="form-control" id="el-desc" rows="2" placeholder="Brief description..."></textarea>
-          </div>
-          <div class="form-group" style="grid-column:1/-1;">
-            <label class="form-label">Election Type</label>
+            <label class="form-label">Election Type (This will be the title)</label>
             <select class="form-control" id="el-type" required>
               <option value="">Select Type...</option>
               <option value="Lok Sabha (MP)">Lok Sabha (Member of Parliament)</option>
               <option value="Vidhan Sabha (MLA)">Vidhan Sabha (Member of Legislative Assembly)</option>
               <option value="Local Body">Local Body (Municipal/Panchayat)</option>
-              <option value="Other">Other</option>
+              <option value="Other">Other Election</option>
             </select>
           </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" id="el-desc" rows="2" placeholder="Brief description..."></textarea>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Start Date & Time</label>
             <input type="datetime-local" class="form-control" id="el-start" required>
