@@ -217,18 +217,25 @@
             <div class="form-hint">Hold Ctrl/Cmd to select multiple states.</div>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Candidates (JSON)</label>
-          <textarea class="form-control" id="el-candidates" rows="6" required
-            style="font-family:monospace; font-size:12px;"
-          >[
-  {"id":"c1","name":"Candidate Name","party":"Party Name","party_id":"","symbol":"🏛️","color":"#3b82f6"}
-]</textarea>
-          <div class="form-hint">Provide candidates as a JSON array. Each must have id, name, party, symbol, color.</div>
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Candidates</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="add-candidate-btn" style="padding: 4px 8px;">+ Add Candidate</button>
+          </label>
+          <div id="candidates-container" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; background: rgba(0,0,0,0.05);">
+            <!-- Candidate rows will be added here -->
+            <div class="candidate-row" style="display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; margin-bottom: 8px;">
+              <input type="text" class="form-control cand-name" placeholder="Name" required>
+              <input type="text" class="form-control cand-party" placeholder="Party" required>
+              <input type="text" class="form-control cand-symbol" placeholder="🏛️" maxlength="2" required>
+              <button type="button" class="btn btn-ghost remove-cand-btn" style="color: var(--red); padding: 0;">✕</button>
+            </div>
+          </div>
         </div>
+
         <div class="modal-actions">
           <button type="button" id="cancel-election-modal" class="btn btn-ghost">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="create-election-btn">
+          <button type="submit" class="btn btn-primary" id="submit-election-btn">
             <span class="spinner"></span>
             <span class="btn-text">Create Election</span>
           </button>

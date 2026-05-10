@@ -16,6 +16,22 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   init();
+
+  // Candidate management in modal
+  document.getElementById('add-candidate-btn')
+    ?.addEventListener('click', addCandidateRow);
+  
+  document.getElementById('candidates-container')
+    ?.addEventListener('click', (e) => {
+      if (e.target.closest('.remove-cand-btn')) {
+        const rows = document.querySelectorAll('.candidate-row');
+        if (rows.length > 1) {
+          e.target.closest('.candidate-row').remove();
+        } else {
+          showToast('info', 'Required', 'At least one candidate is required.');
+        }
+      }
+    });
 });
 
 async function init() {
@@ -196,12 +212,22 @@ async function changeStatus(id, newStatus) {
 
 async function handleCreateElection(e) {
   e.preventDefault();
-  const btn = document.getElementById('create-election-btn');
+  const btn = document.getElementById('submit-election-btn');
   setBtnLoading(btn, true, 'Creating...');
   try {
-    let candidates;
-    try { candidates = JSON.parse(document.getElementById('el-candidates').value); }
-    catch { showToast('error', 'Invalid JSON', 'Please check your candidates JSON.'); setBtnLoading(btn, false); return; }
+    const candidateRows = document.querySelectorAll('.candidate-row');
+    const candidates = Array.from(candidateRows).map((row, index) => ({
+      id: `c${index + 1}`,
+      name: row.querySelector('.cand-name').value.trim(),
+      party: row.querySelector('.cand-party').value.trim(),
+      symbol: row.querySelector('.cand-symbol').value.trim() || '🏛️',
+      color: '#3b82f6', // Default color
+      party_id: ''
+    }));
+
+    if (candidates.some(c => !c.name || !c.party)) {
+      throw new Error('Please fill in all candidate names and parties.');
+    }
 
     const stateSelect = document.getElementById('el-states');
     const eligible_states = Array.from(stateSelect.selectedOptions).map(option => option.value);
@@ -385,11 +411,41 @@ async function loadLogs() {
 // ─── Modal Helpers ────────────────────────────────────────────
 function showCreateElectionModal() {
   document.getElementById('create-election-modal').classList.remove('hidden');
+  
+  // Reset candidates to 1 default row
+  const container = document.getElementById('candidates-container');
+  if (container) {
+    container.innerHTML = `
+      <div class="candidate-row" style="display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; margin-bottom: 8px;">
+        <input type="text" class="form-control cand-name" placeholder="Name" required>
+        <input type="text" class="form-control cand-party" placeholder="Party" required>
+        <input type="text" class="form-control cand-symbol" placeholder="🏛️" maxlength="2" required>
+        <button type="button" class="btn btn-ghost remove-cand-btn" style="color: var(--red); padding: 0;">✕</button>
+      </div>
+    `;
+  }
+
   const now = new Date();
   const local = new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   document.getElementById('el-start').value = local;
   const future = new Date(now.getTime() + 7 * 24 * 3600000 - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   document.getElementById('el-end').value = future;
+}
+
+function addCandidateRow() {
+  const container = document.getElementById('candidates-container');
+  const div = document.createElement('div');
+  div.className = 'candidate-row';
+  div.style = 'display: grid; grid-template-columns: 1fr 1fr 50px 40px; gap: 8px; margin-bottom: 8px;';
+  div.innerHTML = `
+    <input type="text" class="form-control cand-name" placeholder="Name" required>
+    <input type="text" class="form-control cand-party" placeholder="Party" required>
+    <input type="text" class="form-control cand-symbol" placeholder="🏛️" maxlength="2" required>
+    <button type="button" class="btn btn-ghost remove-cand-btn" style="color: var(--red); padding: 0;">✕</button>
+  `;
+  container.appendChild(div);
+  // Auto-focus the new name field
+  div.querySelector('.cand-name').focus();
 }
 
 function showAddVoterModal() {
