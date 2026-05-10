@@ -134,7 +134,10 @@ async function loadElections() {
             <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px;">
               <div>
                 <div class="font-bold" style="font-size:16px;">${e.title}</div>
-                <div class="text-muted text-sm">${formatDate(e.start_date)} → ${formatDate(e.end_date)} · ${(e.candidates || []).length} candidates</div>
+                <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+                  <span class="badge" style="background:rgba(255,255,255,0.05); font-size:11px; padding:2px 6px;">${e.election_type || 'General'}</span>
+                  <div class="text-muted text-sm">${formatDate(e.start_date)} → ${formatDate(e.end_date)}</div>
+                </div>
               </div>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 ${{
@@ -273,6 +276,7 @@ async function handleCreateElection(e) {
     await api.post('/elections', {
       title:       document.getElementById('el-title').value.trim(),
       description: document.getElementById('el-desc').value.trim(),
+      election_type: document.getElementById('el-type').value,
       start_date:  document.getElementById('el-start').value,
       end_date:    document.getElementById('el-end').value,
       candidates,

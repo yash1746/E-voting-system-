@@ -50,6 +50,7 @@ create table if not exists elections (
   start_date timestamptz not null,
   end_date timestamptz not null,
   status text default 'upcoming' check (status in ('upcoming','active','paused','closed')),
+  election_type text check (election_type in ('Lok Sabha (MP)', 'Vidhan Sabha (MLA)', 'Local Body', 'Other')),
   eligible_districts text[] default '{}',  -- Empty = all districts
   eligible_states text[] default '{}',     -- Empty = all states (National)
   created_by text,

@@ -10,7 +10,7 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const { data: elections, error } = await supabase
       .from('elections')
-      .select('id, title, description, candidates, start_date, end_date, status, eligible_districts, eligible_states')
+      .select('id, title, description, candidates, start_date, end_date, status, election_type, eligible_districts, eligible_states')
       .order('start_date', { ascending: false });
 
     if (error) throw error;
@@ -95,7 +95,7 @@ router.get('/:id', requireAuth, async (req, res) => {
  */
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { title, description, candidates, start_date, end_date, eligible_districts, eligible_states } = req.body;
+    const { title, description, candidates, election_type, start_date, end_date, eligible_districts, eligible_states } = req.body;
 
     if (!title || !candidates || !start_date || !end_date) {
       return res.status(400).json({ error: 'Title, candidates, start date, and end date are required.' });
@@ -107,6 +107,7 @@ router.post('/', requireAdmin, async (req, res) => {
         title,
         description,
         candidates,
+        election_type,
         start_date,
         end_date,
         eligible_districts: eligible_districts || [],
