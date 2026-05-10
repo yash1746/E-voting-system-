@@ -96,7 +96,7 @@ async function loadStats() {
 }
 
 // ─── Section Switching ────────────────────────────────────────
-function switchSection(name) {
+function switchSection(name, logFilter = null) {
   currentSection = name;
   document.querySelectorAll('.admin-nav-item[data-section]').forEach(b => {
     b.classList.toggle('active', b.dataset.section === name);
@@ -104,7 +104,7 @@ function switchSection(name) {
   ['elections', 'voters', 'parties', 'applications', 'logs'].forEach(s => {
     document.getElementById(`section-${s}`)?.classList.toggle('hidden', s !== name);
   });
-  if (name === 'logs') loadLogs();
+  if (name === 'logs') loadLogs(logFilter);
   if (name === 'applications') loadApplications();
   if (name === 'parties') loadParties();
 }
@@ -140,6 +140,7 @@ async function loadElections() {
                 ${e.status !== 'closed' ? `
                   ${e.status === 'upcoming' ? `
                     <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="active">▶ Activate</button>
+                    <button class="btn btn-sm btn-ghost" style="color:var(--red);" onclick="handleDeleteElection('${e.id}')">✕ Delete</button>
                   ` : e.status === 'active' ? `
                     <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="paused">⏸ Pause</button>
                     <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="closed">⏹ Close</button>
@@ -150,6 +151,7 @@ async function loadElections() {
                 ` : `
                   <a href="/results.html?election=${e.id}" class="btn btn-sm btn-ghost">📊 Results</a>
                   <button class="btn btn-sm btn-ghost" data-export-id="${e.id}">📥 Export CSV</button>
+                  <button class="btn btn-sm btn-ghost" style="color:var(--red);" onclick="handleDeleteElection('${e.id}')">✕ Delete</button>
                 `}
               </div>
             </div>
@@ -219,6 +221,18 @@ async function changeStatus(id, newStatus) {
     loadStats();
   } catch (err) {
     showToast('error', 'Error', err.message);
+  }
+}
+
+async function handleDeleteElection(id) {
+  if (!confirm('Are you sure you want to delete this election? This cannot be undone.')) return;
+  try {
+    await api.delete(`/elections/${id}`);
+    showToast('success', 'Deleted', 'Election removed successfully.');
+    loadElections();
+    loadStats();
+  } catch (err) {
+    showToast('error', 'Delete Failed', err.message);
   }
 }
 
@@ -403,14 +417,19 @@ async function handleAddVoter(e) {
 }
 
 // ─── Audit Logs ───────────────────────────────────────────────
-async function loadLogs() {
+async function loadLogs(filter = null) {
   try {
     const data = await api.get('/admin/logs');
-    const logs = data.logs || [];
+    let logs = data.logs || [];
     const tbody = document.getElementById('logs-tbody');
 
+    if (filter) {
+      logs = logs.filter(l => l.action.includes(filter.toUpperCase()));
+      showToast('info', 'Filtered', `Showing logs for: ${filter}`);
+    }
+
     if (!logs.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No logs found.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted">No ${filter || ''} logs found.</td></tr>`;
       return;
     }
 
@@ -419,11 +438,22 @@ async function loadLogs() {
         <td><span class="font-bold text-sm">${l.action}</span></td>
         <td class="text-sm font-mono">${l.performed_by || '—'}</td>
         <td class="text-xs text-muted">${l.details ? JSON.stringify(l.details).slice(0, 60) + '...' : '—'}</td>
-        <td class="text-xs text-muted">${l.ip_address || '—'}</td>
         <td class="text-xs">${formatDateTime(l.created_at)}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red); padding:4px;" onclick="handleDeleteLog('${l.id}')">✕</button>
+        </td>
       </tr>
     `).join('');
   } catch {}
+}
+
+async function handleDeleteLog(id) {
+  try {
+    await api.delete(`/admin/logs/${id}`);
+    loadLogs();
+  } catch (err) {
+    showToast('error', 'Error', 'Failed to delete log.');
+  }
 }
 
 // ─── Modal Helpers ────────────────────────────────────────────

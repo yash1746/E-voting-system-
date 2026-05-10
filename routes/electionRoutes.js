@@ -170,13 +170,27 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
  */
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
-    const { data: election } = await supabase.from('elections').select('status').eq('id', req.params.id).single();
+    const { data: election } = await supabase.from('elections').select('status, title').eq('id', req.params.id).single();
     if (!election) return res.status(404).json({ error: 'Election not found.' });
-    if (election.status !== 'upcoming') return res.status(400).json({ error: 'Only upcoming elections can be deleted.' });
+    
+    // Only allow deleting closed or upcoming elections
+    if (['active', 'paused'].includes(election.status)) {
+      return res.status(400).json({ error: 'Cannot delete an active or paused election. Close it first.' });
+    }
 
-    await supabase.from('elections').delete().eq('id', req.params.id);
+    const { error } = await supabase.from('elections').delete().eq('id', req.params.id);
+    if (error) throw error;
+
+    await supabase.from('audit_logs').insert({
+      action: 'ELECTION_DELETED',
+      performed_by: req.voter.voter_id_number,
+      details: { election_id: req.params.id, title: election.title },
+      ip_address: req.ip,
+    });
+
     return res.json({ success: true });
   } catch (err) {
+    console.error('Delete election error:', err);
     res.status(500).json({ error: 'Failed to delete election.' });
   }
 });

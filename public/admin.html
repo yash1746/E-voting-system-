@@ -79,8 +79,14 @@
           <!-- ═══ Elections Section ═══ -->
           <div id="section-elections">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-              <h3>Manage Elections</h3>
-              <button id="create-election-btn-open" class="btn btn-primary btn-sm">+ Create Election</button>
+              <div>
+                <h3 style="font-size:20px; font-weight:700;">🗳️ Manage Elections</h3>
+                <p class="text-sm text-muted">Create, monitor, and manage national or state-level elections.</p>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-ghost btn-sm" onclick="switchSection('logs', 'ELECTION')">📋 Logs</button>
+                <button id="create-election-btn-open" class="btn btn-primary btn-sm">+ Create Election</button>
+              </div>
             </div>
             <div id="elections-list" class="card"><div class="text-muted text-sm">Loading...</div></div>
           </div>
@@ -88,8 +94,14 @@
           <!-- ═══ Voters Section ═══ -->
           <div id="section-voters" class="hidden">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-              <h3>Voter Registry</h3>
-              <button id="add-voter-btn-open" class="btn btn-primary btn-sm">+ Add Voter</button>
+              <div>
+                <h3 style="font-size:20px; font-weight:700;">👥 Voter Registry</h3>
+                <p class="text-sm text-muted">View and manage the official list of eligible voters.</p>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-ghost btn-sm" onclick="switchSection('logs', 'VOTER')">📋 Logs</button>
+                <button id="add-voter-btn-open" class="btn btn-primary btn-sm">+ Add Voter</button>
+              </div>
             </div>
             <div class="card">
               <div style="overflow-x:auto;">
@@ -119,7 +131,10 @@
                 <h3 style="font-size:20px; font-weight:700;">🏛️ Political Parties</h3>
                 <p class="text-sm text-muted">Manage registered political parties and their state eligibility.</p>
               </div>
-              <button class="btn btn-primary btn-sm" id="create-party-btn-open">+ Add Party</button>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-ghost btn-sm" onclick="switchSection('logs', 'PARTY')">📋 Logs</button>
+                <button class="btn btn-primary btn-sm" id="create-party-btn-open">+ Add Party</button>
+              </div>
             </div>
             <div id="parties-list">
               <!-- Parties will be loaded here -->
@@ -129,9 +144,12 @@
 
           <!-- ═══ Applications Section ═══ -->
           <div id="section-applications" class="hidden">
-            <div style="margin-bottom:20px;">
-              <h3 style="font-size:20px; font-weight:700;">📝 Pending Voter Applications</h3>
-              <p class="text-sm text-muted">Review citizen registration requests. Approved voters will be added to the official registry.</p>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+              <div>
+                <h3 style="font-size:20px; font-weight:700;">📄 Pending Voter Applications</h3>
+                <p class="text-sm text-muted">Review citizen registration requests for approval.</p>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="switchSection('logs', 'APPROVE')">📋 Logs</button>
             </div>
             <div class="card">
               <div style="overflow-x:auto;">

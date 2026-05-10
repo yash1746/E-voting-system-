@@ -122,4 +122,17 @@ router.get('/stats', requireAdmin, async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/admin/logs/:id — Delete a log entry
+ */
+router.delete('/logs/:id', requireAdmin, async (req, res) => {
+  try {
+    const { error } = await supabase.from('audit_logs').delete().eq('id', req.params.id);
+    if (error) throw error;
+    return res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete log.' });
+  }
+});
+
 module.exports = router;
