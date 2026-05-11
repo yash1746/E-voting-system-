@@ -65,6 +65,12 @@ app.use(cookieParser());
 // ─── Static Files ───────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ─── Request Logger ─────────────────────────────────────────────
+app.use((req, res, next) => {
+  if (isDev) console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.path}`);
+  next();
+});
+
 // ─── API Routes ─────────────────────────────────────────────────
 app.use('/api/auth', authLimiter, require('./routes/authRoutes'));
 app.use('/api/elections', require('./routes/electionRoutes'));
@@ -85,9 +91,11 @@ app.get('/api/health', (req, res) => {
 });
 
 // ─── SPA Fallback (serve index.html for all non-API routes) ─────
-app.get('/{*path}', (req, res) => {
+app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    res.status(404).json({ error: 'API endpoint not found.' });
   }
 });
 
