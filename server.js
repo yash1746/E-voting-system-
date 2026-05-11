@@ -90,12 +90,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ─── SPA Fallback (serve index.html for all non-API routes) ─────
-app.get('*all', (req, res) => {
-  if (!req.path.startsWith('/api')) {
+// ─── SPA Fallback & Catch-All ───────────────────────────────────
+app.all('*all', (req, res) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
   } else {
-    res.status(404).json({ error: 'API endpoint not found.' });
+    res.status(404).json({ 
+      error: 'Endpoint not found.',
+      path: req.path,
+      method: req.method
+    });
   }
 });
 

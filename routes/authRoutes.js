@@ -23,6 +23,7 @@ router.post('/verify-voter', async (req, res) => {
       .single();
 
     if (error || !voter) {
+      console.warn(`[Auth] Voter ID not found: ${voter_id}`);
       // Log failed attempt
       await supabase.from('audit_logs').insert({
         action: 'VOTER_ID_NOT_FOUND',
@@ -30,7 +31,7 @@ router.post('/verify-voter', async (req, res) => {
         details: { voter_id_attempted: voter_id },
         ip_address: req.ip,
       });
-      return res.status(404).json({ error: 'Voter ID not found in the electoral registry. Please check your Voter Card.' });
+      return res.status(400).json({ error: 'Voter ID not found in the electoral registry. Please check your Voter Card.' });
     }
 
     if (!voter.is_active) {
