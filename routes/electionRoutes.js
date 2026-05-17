@@ -48,13 +48,17 @@ router.get('/', requireAuth, async (req, res) => {
 
     const votedSet = new Set((receipts || []).map(r => r.election_id));
 
-    const enriched = filteredElections.map(e => ({
-      ...e,
-      has_voted: votedSet.has(e.id),
-      candidate_count: Array.isArray(e.candidates) ? e.candidates.length : 0,
-      results_announced: e.results_announced === true, // Safe fallback
-      election_type: e.election_type || 'General',   // Safe fallback
-    }));
+    const enriched = filteredElections.map(e => {
+      const isAnnounced = e.results_announced === true || (e.description && e.description.includes('[RESULTS_ANNOUNCED]'));
+      return {
+        ...e,
+        has_voted: votedSet.has(e.id),
+        candidate_count: Array.isArray(e.candidates) ? e.candidates.length : 0,
+        results_announced: !!isAnnounced,
+        description: e.description ? e.description.replace(' [RESULTS_ANNOUNCED]', '').replace('[RESULTS_ANNOUNCED]', '').trim() : '',
+        election_type: e.election_type || 'General',
+      };
+    });
 
     return res.json({ elections: enriched });
   } catch (err) {
@@ -92,8 +96,16 @@ router.get('/:id', requireAuth, async (req, res) => {
       .select('id', { count: 'exact' })
       .eq('election_id', req.params.id);
 
+    const isAnnounced = election.results_announced === true || (election.description && election.description.includes('[RESULTS_ANNOUNCED]'));
+    const cleanElection = {
+      ...election,
+      results_announced: !!isAnnounced,
+      description: election.description ? election.description.replace(' [RESULTS_ANNOUNCED]', '').replace('[RESULTS_ANNOUNCED]', '').trim() : '',
+      election_type: election.election_type || 'General',
+    };
+
     return res.json({
-      election,
+      election: cleanElection,
       has_voted: !!receipt,
       receipt_token: receipt?.receipt_token || null,
       voted_at: receipt?.voted_at || null,
@@ -212,7 +224,35 @@ router.patch('/:id/announce', requireAdmin, async (req, res) => {
 
     if (error) {
       if (error.message.includes('results_announced')) {
-        return res.status(400).json({ error: 'Please update your database schema to support the results_announced column. Run the SQL: ALTER TABLE elections ADD COLUMN IF NOT EXISTS results_announced boolean DEFAULT false;' });
+        // Fallback: append marker to the description
+        const { data: current } = await supabase
+          .from('elections')
+          .select('description')
+          .eq('id', req.params.id)
+          .single();
+
+        let desc = current?.description || '';
+        if (!desc.includes('[RESULTS_ANNOUNCED]')) {
+          desc = (desc ? desc + ' ' : '') + '[RESULTS_ANNOUNCED]';
+        }
+
+        const fallback = await supabase
+          .from('elections')
+          .update({ description: desc })
+          .eq('id', req.params.id)
+          .select()
+          .single();
+
+        if (fallback.error) throw fallback.error;
+
+        await supabase.from('audit_logs').insert({
+          action: 'RESULTS_ANNOUNCED_FALLBACK',
+          performed_by: req.voter.voter_id_number,
+          details: { election_id: req.params.id },
+          ip_address: req.ip,
+        });
+
+        return res.json({ success: true, election: fallback.data });
       }
       throw error;
     }
@@ -242,7 +282,14 @@ router.patch('/:id', requireAdmin, async (req, res) => {
         return res.status(400).json({ error: validationError });
       }
     }
-
+    if (req.body.description) {
+      // Check if this election was already announced
+      const { data: oldEl } = await supabase.from('elections').select('results_announced, description').eq('id', req.params.id).single();
+      const wasAnnounced = oldEl?.results_announced === true || (oldEl?.description && oldEl.description.includes('[RESULTS_ANNOUNCED]'));
+      if (wasAnnounced && !req.body.description.includes('[RESULTS_ANNOUNCED]')) {
+        req.body.description = req.body.description.trim() + ' [RESULTS_ANNOUNCED]';
+      }
+    }
     const { data: election, error } = await supabase
       .from('elections')
       .update(req.body)
