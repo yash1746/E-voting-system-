@@ -866,6 +866,16 @@ async function handleAddCandidatePerConst(e) {
     const election = mgmtElections.find(el => el.id === mgmtActiveElectionId);
     const party = allParties.find(p => p.id === partyId);
 
+    if (partyId !== 'independent') {
+      const existing = (election.candidates || []).find(c => 
+        c.constituency.toLowerCase() === mgmtActiveConstituency.toLowerCase() && 
+        c.party_id === partyId
+      );
+      if (existing) {
+        throw new Error(`A candidate from "${party ? party.name : 'this party'}" already exists in the "${mgmtActiveConstituency}" constituency.`);
+      }
+    }
+
     const newCand = {
       id: `c_${Date.now()}`,
       name,

@@ -3,6 +3,22 @@ const router = express.Router();
 const { supabase } = require('../config/supabase');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
+function validateCandidatesPartyUniqueness(candidates) {
+  if (!candidates || !Array.isArray(candidates)) return null;
+  const seen = new Set();
+  for (const c of candidates) {
+    if (!c.constituency || !c.party_id) continue;
+    if (c.party_id === 'independent') continue;
+    
+    const key = `${c.constituency.toLowerCase()}-${c.party_id}`;
+    if (seen.has(key)) {
+      return `Only one candidate per party is allowed in a given constituency (Constituency: "${c.constituency}", Party: "${c.party || c.party_id}").`;
+    }
+    seen.add(key);
+  }
+  return null;
+}
+
 /**
  * GET /api/elections — List elections
  */
@@ -104,6 +120,11 @@ router.post('/', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Title, candidates, start date, and end date are required.' });
     }
 
+    const validationError = validateCandidatesPartyUniqueness(candidates);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+
     const insertData = {
       title,
       description,
@@ -186,6 +207,13 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
  */
 router.patch('/:id', requireAdmin, async (req, res) => {
   try {
+    if (req.body.candidates) {
+      const validationError = validateCandidatesPartyUniqueness(req.body.candidates);
+      if (validationError) {
+        return res.status(400).json({ error: validationError });
+      }
+    }
+
     const { data: election, error } = await supabase
       .from('elections')
       .update(req.body)
