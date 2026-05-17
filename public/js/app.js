@@ -179,6 +179,31 @@ async function initNavbar(activePage) {
     if (a.dataset.page === activePage) a.classList.add('active');
   });
 
+  // Inject mobile toggle button if it doesn't exist
+  let toggleBtn = navbar.querySelector('.navbar-toggle');
+  if (!toggleBtn) {
+    toggleBtn = document.createElement('button');
+    toggleBtn.className = 'navbar-toggle';
+    toggleBtn.setAttribute('aria-label', 'Toggle Navigation');
+    toggleBtn.innerHTML = `
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    `;
+    const authAreaEl = navbar.querySelector('#navbar-auth');
+    if (authAreaEl) {
+      navbar.insertBefore(toggleBtn, authAreaEl);
+    } else {
+      navbar.appendChild(toggleBtn);
+    }
+    
+    toggleBtn.addEventListener('click', () => {
+      toggleBtn.classList.toggle('active');
+      const navList = navbar.querySelector('.navbar-nav');
+      if (navList) navList.classList.toggle('active');
+    });
+  }
+
   const authArea = document.getElementById('navbar-auth');
   if (authArea) {
     if (user) {
