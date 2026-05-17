@@ -17,9 +17,10 @@ router.get('/:electionId', requireAuth, async (req, res) => {
 
     if (!election) return res.status(404).json({ error: 'Election not found.' });
 
-    // Only admin or closed elections show results
-    if (election.status !== 'closed' && req.role !== 'admin') {
-      return res.status(403).json({ error: 'Results are only available after the election is closed.' });
+    // Only allow viewing results if election is closed AND results are announced (or if user is admin)
+    const isAnnounced = election.results_announced === true;
+    if (req.role !== 'admin' && (election.status !== 'closed' || !isAnnounced)) {
+      return res.status(403).json({ error: 'Results for this election are not yet announced.' });
     }
 
     // Get all votes

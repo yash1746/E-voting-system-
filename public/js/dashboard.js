@@ -85,11 +85,17 @@ function renderElections() {
   noState.classList.toggle('hidden', myStateElections.length > 0);
   
   const renderCard = (e, isMyState) => {
-    const statusBadge = {
-      active:   '<span class="badge badge-active">🟢 Active</span>',
-      upcoming: '<span class="badge badge-upcoming">🟡 Upcoming</span>',
-      closed:   '<span class="badge badge-closed" style="background:rgba(239, 68, 68, 0.1); border-color:var(--red); color:var(--red); animation: pulse-red 2s infinite; font-weight:700;">🔴 Results Out</span>',
-    }[e.status] || '';
+    const isAnnounced = e.results_announced === true;
+    const statusBadge = (() => {
+      if (e.status === 'active') return '<span class="badge badge-active">🟢 Active</span>';
+      if (e.status === 'upcoming') return '<span class="badge badge-upcoming">🟡 Upcoming</span>';
+      if (e.status === 'closed') {
+        return isAnnounced 
+          ? '<span class="badge badge-closed" style="background:rgba(239, 68, 68, 0.1); border-color:var(--red); color:var(--red); animation: pulse-red 2s infinite; font-weight:700;">🔴 Results Out</span>'
+          : '<span class="badge badge-closed">⚫ Closed</span>';
+      }
+      return '';
+    })();
 
     const votedBadge = e.has_voted ? '<span class="badge badge-voted">✅ Voted</span>' : '';
 
@@ -97,13 +103,28 @@ function renderElections() {
       // ONLY allow voting if it's the voter's state
       if (isMyState) {
         if (e.status === 'active' && !e.has_voted) return `<a href="/vote.html?election=${e.id}" class="btn btn-primary">🗳️ Vote Now</a>`;
-        if (e.has_voted) return `<a href="/vote.html?election=${e.id}" class="btn btn-ghost btn-sm">View Receipt</a>`;
+        if (e.has_voted) {
+          if (e.status === 'closed') {
+            return isAnnounced 
+              ? `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`
+              : `<button class="btn btn-ghost btn-sm" disabled style="opacity:0.6; cursor:not-allowed;">⏳ Results Awaited</button>`;
+          }
+          return `<a href="/vote.html?election=${e.id}" class="btn btn-ghost btn-sm">View Receipt</a>`;
+        }
       } else {
         // For other states, only allow viewing info/results
-        if (e.status === 'closed') return `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`;
+        if (e.status === 'closed') {
+          return isAnnounced 
+            ? `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`
+            : `<button class="btn btn-ghost btn-sm" disabled style="opacity:0.6; cursor:not-allowed;">⏳ Results Awaited</button>`;
+        }
         return `<button class="btn btn-ghost btn-sm" onclick="showInfo('${e.id}')">ℹ️ View Info</button>`;
       }
-      if (e.status === 'closed') return `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`;
+      if (e.status === 'closed') {
+        return isAnnounced 
+          ? `<a href="/results.html?election=${e.id}" class="btn btn-ghost btn-sm">📊 Results</a>`
+          : `<button class="btn btn-ghost btn-sm" disabled style="opacity:0.6; cursor:not-allowed;">⏳ Results Awaited</button>`;
+      }
       return `<button class="btn btn-ghost btn-sm" disabled>⏳ Not Yet Open</button>`;
     })();
 

@@ -54,6 +54,7 @@ create table if not exists elections (
   election_type text check (election_type in ('Lok Sabha (MP)', 'Vidhan Sabha (MLA)', 'Local Body', 'Other')),
   eligible_districts text[] default '{}',  -- Empty = all districts
   eligible_states text[] default '{}',     -- Empty = all states (National)
+  results_announced boolean default false,  -- Controlled result release
   created_by text,
   created_at timestamptz default now()
 );

@@ -24,13 +24,17 @@ function validateCandidatesPartyUniqueness(candidates) {
  */
 router.get('/', requireAuth, async (req, res) => {
   try {
-    // Try to select with election_type, but fallback if the column doesn't exist yet
-    let query = supabase.from('elections').select('id, title, description, candidates, start_date, end_date, status, election_type, eligible_districts, eligible_states');
+    // Try to select with all optional columns, but fallback if they do not exist
+    let query = supabase.from('elections').select('id, title, description, candidates, start_date, end_date, status, election_type, eligible_districts, eligible_states, results_announced');
     let { data: elections, error } = await query.order('start_date', { ascending: false });
 
-    if (error && error.message.includes('election_type')) {
-      // Fallback: the user likely hasn't run the SQL to add the column yet
-      const fallback = await supabase.from('elections').select('id, title, description, candidates, start_date, end_date, status, eligible_districts, eligible_states').order('start_date', { ascending: false });
+    if (error) {
+      // Build dynamic fallback fields based on which columns failed
+      let fields = 'id, title, description, candidates, start_date, end_date, status, eligible_districts, eligible_states';
+      if (!error.message.includes('election_type')) fields += ', election_type';
+      if (!error.message.includes('results_announced')) fields += ', results_announced';
+      
+      const fallback = await supabase.from('elections').select(fields).order('start_date', { ascending: false });
       elections = fallback.data;
       error = fallback.error;
     }
@@ -199,6 +203,39 @@ router.patch('/:id/status', requireAdmin, async (req, res) => {
     return res.json({ success: true, election });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update election status.' });
+  }
+});
+
+/**
+ * PATCH /api/elections/:id/announce — Admin: Announce results
+ */
+router.patch('/:id/announce', requireAdmin, async (req, res) => {
+  try {
+    const { data: election, error } = await supabase
+      .from('elections')
+      .update({ results_announced: true })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.message.includes('results_announced')) {
+        return res.status(400).json({ error: 'Please update your database schema to support the results_announced column. Run the SQL: ALTER TABLE elections ADD COLUMN IF NOT EXISTS results_announced boolean DEFAULT false;' });
+      }
+      throw error;
+    }
+
+    await supabase.from('audit_logs').insert({
+      action: 'RESULTS_ANNOUNCED',
+      performed_by: req.voter.voter_id_number,
+      details: { election_id: req.params.id },
+      ip_address: req.ip,
+    });
+
+    return res.json({ success: true, election });
+  } catch (err) {
+    console.error('Announce results error:', err);
+    res.status(500).json({ error: 'Failed to announce results.' });
   }
 });
 

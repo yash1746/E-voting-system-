@@ -172,6 +172,9 @@ async function loadElections() {
                     <button class="btn btn-sm btn-ghost" data-election-id="${e.id}" data-new-status="closed">⏹ Close</button>
                   ` : ''}
                 ` : `
+                  ${e.results_announced 
+                    ? '<span class="badge" style="background:var(--green-glass); color:var(--green); border-color:var(--green); font-size:11px; padding:4px 8px; border-radius:4px; font-weight:700;">📢 Announced</span>' 
+                    : `<button class="btn btn-sm btn-primary" data-announce-id="${e.id}" style="background:var(--blue); border-color:var(--blue); font-weight:600;">📢 Announce Results</button>`}
                   <a href="/results.html?election=${e.id}" class="btn btn-sm btn-ghost">📊 Results</a>
                   <button class="btn btn-sm btn-ghost" data-export-id="${e.id}">📥 Export CSV</button>
                   <button class="btn btn-sm btn-ghost" style="color:var(--red);" onclick="handleDeleteElection('${e.id}')">✕ Delete</button>
@@ -194,12 +197,29 @@ async function loadElections() {
       const exportBtn = e.target.closest('[data-export-id]');
       if (exportBtn) {
         await handleExport(exportBtn.dataset.exportId);
+        return;
+      }
+
+      const announceBtn = e.target.closest('[data-announce-id]');
+      if (announceBtn) {
+        await announceResults(announceBtn.dataset.announceId);
       }
     });
 
   } catch (err) {
     document.getElementById('elections-list').innerHTML =
       `<div class="alert alert-error"><span class="alert-icon">⚠️</span>${err.message}</div>`;
+  }
+}
+
+async function announceResults(id) {
+  if (!confirm('📢 Are you sure you want to officially announce the results of this election? This will make the results visible to all voters immediately.')) return;
+  try {
+    await api.patch(`/elections/${id}/announce`, {});
+    showToast('success', 'Announced!', 'Election results have been officially announced to all voters.');
+    loadElections();
+  } catch (err) {
+    showToast('error', 'Failed', err.message);
   }
 }
 
