@@ -72,6 +72,18 @@ async function init() {
     ?.addEventListener('click', showCreatePartyModal);
   document.getElementById('refresh-logs-btn')
     ?.addEventListener('click', loadLogs);
+  document.getElementById('delete-selected-logs-btn')
+    ?.addEventListener('click', handleDeleteSelectedLogs);
+  document.getElementById('delete-all-logs-btn')
+    ?.addEventListener('click', handleDeleteAllLogs);
+  document.getElementById('select-all-logs-chk')
+    ?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      document.querySelectorAll('.log-row-chk').forEach(chk => {
+        chk.checked = checked;
+      });
+      updateDeleteSelectedBtnState();
+    });
   document.getElementById('cancel-election-modal')
     ?.addEventListener('click', () => closeModal('create-election-modal'));
   document.getElementById('cancel-voter-modal')
@@ -419,36 +431,97 @@ async function loadLogs(filter = null) {
     let logs = data.logs || [];
     const tbody = document.getElementById('logs-tbody');
 
+    // Reset select all checkbox and delete selected button state
+    const selectAllChk = document.getElementById('select-all-logs-chk');
+    if (selectAllChk) selectAllChk.checked = false;
+    
+    const deleteSelBtn = document.getElementById('delete-selected-logs-btn');
+    if (deleteSelBtn) {
+      deleteSelBtn.disabled = true;
+      deleteSelBtn.textContent = '🗑️ Delete Selected';
+    }
+
     if (filter) {
       logs = logs.filter(l => l.action.includes(filter.toUpperCase()));
       showToast('info', 'Filtered', `Showing logs for: ${filter}`);
     }
 
     if (!logs.length) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-muted">No ${filter || ''} logs found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-muted">No ${filter || ''} logs found.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = logs.map(l => `
       <tr>
+        <td style="text-align:center;">
+          <input type="checkbox" class="log-row-chk" data-log-id="${l.id}" style="cursor:pointer;" onchange="updateDeleteSelectedBtnState()" />
+        </td>
         <td><span class="font-bold text-sm">${l.action}</span></td>
         <td class="text-sm font-mono">${l.performed_by || '—'}</td>
-        <td class="text-xs text-muted">${l.details ? JSON.stringify(l.details).slice(0, 60) + '...' : '—'}</td>
+        <td class="text-xs text-muted" title="${l.details ? escapeHtml(JSON.stringify(l.details)) : ''}">
+          ${l.details ? JSON.stringify(l.details).slice(0, 60) + (JSON.stringify(l.details).length > 60 ? '...' : '') : '—'}
+        </td>
+        <td class="text-xs font-mono">${l.ip_address || '—'}</td>
         <td class="text-xs">${formatDateTime(l.created_at)}</td>
-        <td>
+        <td style="text-align:center;">
           <button class="btn btn-ghost btn-sm" style="color:var(--red); padding:4px;" onclick="handleDeleteLog('${l.id}')">✕</button>
         </td>
       </tr>
     `).join('');
-  } catch {}
+  } catch (err) {
+    console.error('Failed to load logs:', err);
+  }
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function updateDeleteSelectedBtnState() {
+  const chks = document.querySelectorAll('.log-row-chk:checked');
+  const deleteSelBtn = document.getElementById('delete-selected-logs-btn');
+  if (deleteSelBtn) {
+    deleteSelBtn.disabled = chks.length === 0;
+    deleteSelBtn.textContent = chks.length > 0 ? `🗑️ Delete Selected (${chks.length})` : '🗑️ Delete Selected';
+  }
 }
 
 async function handleDeleteLog(id) {
+  if (!confirm('Are you sure you want to delete this log entry?')) return;
   try {
     await api.delete(`/admin/logs/${id}`);
+    showToast('success', 'Success', 'Log entry deleted.');
     loadLogs();
   } catch (err) {
     showToast('error', 'Error', 'Failed to delete log.');
+  }
+}
+
+async function handleDeleteSelectedLogs() {
+  const chks = document.querySelectorAll('.log-row-chk:checked');
+  const ids = Array.from(chks).map(c => c.dataset.logId);
+  if (ids.length === 0) return;
+  
+  if (!confirm(`Are you sure you want to delete the ${ids.length} selected log entries?`)) return;
+  
+  try {
+    await api.delete(`/admin/logs/${ids.join(',')}`);
+    showToast('success', 'Success', `${ids.length} logs deleted successfully.`);
+    loadLogs();
+  } catch (err) {
+    showToast('error', 'Error', 'Failed to delete selected logs.');
+  }
+}
+
+async function handleDeleteAllLogs() {
+  if (!confirm('🚨 WARNING: Are you absolutely sure you want to delete ALL audit logs? This action is permanent and cannot be undone.')) return;
+  
+  try {
+    await api.delete('/admin/logs/all');
+    showToast('success', 'Success', 'All audit logs deleted successfully.');
+    loadLogs();
+  } catch (err) {
+    showToast('error', 'Error', 'Failed to delete all logs.');
   }
 }
 

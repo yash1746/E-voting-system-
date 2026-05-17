@@ -133,15 +133,27 @@ router.get('/stats', requireAdmin, async (req, res) => {
 });
 
 /**
- * DELETE /api/admin/logs/:id — Delete a log entry
+ * DELETE /api/admin/logs/:id — Delete log entries (supports ':id' as single ID, 'all' for deleting all logs, or comma-separated list of IDs)
  */
 router.delete('/logs/:id', requireAdmin, async (req, res) => {
   try {
-    const { error } = await supabase.from('audit_logs').delete().eq('id', req.params.id);
-    if (error) throw error;
-    return res.json({ success: true });
+    const { id } = req.params;
+    if (id === 'all') {
+      const { error } = await supabase.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Deletes all
+      if (error) throw error;
+      return res.json({ success: true, message: 'All logs deleted successfully.' });
+    } else if (id.includes(',')) {
+      const ids = id.split(',');
+      const { error } = await supabase.from('audit_logs').delete().in('id', ids);
+      if (error) throw error;
+      return res.json({ success: true, message: 'Selected logs deleted successfully.' });
+    } else {
+      const { error } = await supabase.from('audit_logs').delete().eq('id', id);
+      if (error) throw error;
+      return res.json({ success: true });
+    }
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete log.' });
+    res.status(500).json({ error: 'Failed to delete logs.' });
   }
 });
 

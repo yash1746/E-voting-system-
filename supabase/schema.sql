@@ -206,7 +206,8 @@ create policy "Service role full access" on audit_logs for all using (true);
 INSERT INTO eligible_voters (full_name, voter_id_number, phone, email, district, state, date_of_birth, is_active)
 VALUES 
 ('Admin User', 'ADMIN00001', '+91-9000000000', 'admin@evoting.gov.in', 'New Delhi', 'Delhi', '1980-01-01', true),
-('Rajesh Sharma', 'ECI0001234', '+91-9876543210', 'rajesh@example.com', 'New Delhi', 'Delhi', '1985-03-15', true)
+('Rajesh Sharma', 'ECI0001234', '+91-9876543210', 'rajesh@example.com', 'New Delhi', 'Delhi', '1985-03-15', true),
+('Priya Singh', 'ECI0002345','+91-9876543211','priya@example.com','Mumbai','Maharashtra','1990-07-22','female')
 ON CONFLICT (voter_id_number) DO UPDATE SET is_active = true;
 
 -- Political Parties Seed
