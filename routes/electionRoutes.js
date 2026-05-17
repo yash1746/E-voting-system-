@@ -24,25 +24,15 @@ function validateCandidatesPartyUniqueness(candidates) {
  */
 router.get('/', requireAuth, async (req, res) => {
   try {
-    // Try to select with all optional columns, but fallback if they do not exist
-    let query = supabase.from('elections').select('id, title, description, candidates, start_date, end_date, status, election_type, eligible_districts, eligible_states, results_announced');
-    let { data: elections, error } = await query.order('start_date', { ascending: false });
-
-    if (error) {
-      // Build dynamic fallback fields based on which columns failed
-      let fields = 'id, title, description, candidates, start_date, end_date, status, eligible_districts, eligible_states';
-      if (!error.message.includes('election_type')) fields += ', election_type';
-      if (!error.message.includes('results_announced')) fields += ', results_announced';
-      
-      const fallback = await supabase.from('elections').select(fields).order('start_date', { ascending: false });
-      elections = fallback.data;
-      error = fallback.error;
-    }
+    let { data: elections, error } = await supabase
+      .from('elections')
+      .select('*')
+      .order('start_date', { ascending: false });
 
     if (error) throw error;
 
     // Allow all elections to be loaded so the dashboard can show other states' elections in view-only mode
-    const filteredElections = elections;
+    const filteredElections = elections || [];
 
     if (filteredElections.length === 0) {
       return res.json({ elections: [] });
@@ -62,6 +52,8 @@ router.get('/', requireAuth, async (req, res) => {
       ...e,
       has_voted: votedSet.has(e.id),
       candidate_count: Array.isArray(e.candidates) ? e.candidates.length : 0,
+      results_announced: e.results_announced === true, // Safe fallback
+      election_type: e.election_type || 'General',   // Safe fallback
     }));
 
     return res.json({ elections: enriched });

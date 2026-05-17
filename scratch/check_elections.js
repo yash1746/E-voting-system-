@@ -11,7 +11,6 @@ async function checkElections() {
   }
 
   console.log('--- ELECTIONS IN DATABASE ---');
-  elections.forEach(e => {
     console.log(`\nElection ID: ${e.id}`);
     console.log(`Title: ${e.title}`);
     console.log(`Status: ${e.status}`);
