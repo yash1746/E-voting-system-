@@ -16,12 +16,17 @@ router.post('/verify-voter', async (req, res) => {
       return res.status(400).json({ error: 'Please enter a valid Voter ID number.' });
     }
 
+    const searchId = voter_id.trim().toUpperCase();
+    console.log(`[Auth] Attempting verification for: |${searchId}| (from input: |${voter_id}|)`);
+
     const { data: voter, error } = await supabase
       .from('eligible_voters')
-      .select('id, full_name, phone, email, voter_id_number, district, state, constituency, is_active')
-      .eq('voter_id_number', voter_id.trim().toUpperCase())
+      .select('id, full_name, phone, email, voter_id_number, district, state, is_active')
+      .eq('voter_id_number', searchId)
       .single();
 
+    if (error) console.error(`[Auth] DB Error for ${searchId}:`, error.message);
+    
     if (error || !voter) {
       console.warn(`[Auth] Voter ID not found: ${voter_id}`);
       // Log failed attempt
