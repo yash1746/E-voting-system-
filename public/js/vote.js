@@ -97,6 +97,20 @@ async function init() {
         badge.style.background = 'var(--gold-glass)';
         badge.style.borderColor = 'var(--gold)';
       }
+
+      // Customize prompts for view-only experience
+      const stepBadge = document.getElementById('step-badge');
+      if (stepBadge) stepBadge.textContent = 'Transparency Info';
+
+      const stepTitle = document.getElementById('step-title');
+      if (stepTitle) stepTitle.textContent = 'Candidate Lineup';
+
+      const stepDesc = document.getElementById('step-desc');
+      if (stepDesc) stepDesc.textContent = 'Review registered candidates and check their political affiliations or party portfolios below.';
+
+      // Hide the vote progress bar
+      const progressContainer = document.querySelector('.vote-progress');
+      if (progressContainer) progressContainer.style.display = 'none';
     }
 
     renderCandidates(candidates);
