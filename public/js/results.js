@@ -13,6 +13,8 @@ async function init() {
   const params = new URLSearchParams(window.location.search);
   const electionParam = params.get('election');
   if (electionParam) {
+    document.getElementById('selector-container')?.classList.add('hidden');
+    document.getElementById('back-link-container')?.classList.remove('hidden');
     document.getElementById('election-select').value = electionParam;
     loadResults();
   }

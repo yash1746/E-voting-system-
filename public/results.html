@@ -31,7 +31,7 @@
       </div>
 
       <!-- Election Selector -->
-      <div class="card card-sm" style="margin-bottom:28px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div id="selector-container" class="card card-sm" style="margin-bottom:28px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
         <label class="form-label" style="margin:0; min-width:100px;">Select Election:</label>
         <select id="election-select" class="form-control" style="max-width:400px;">
           <option value="">— Choose an election —</option>
@@ -53,6 +53,13 @@
 
       <!-- Results Display -->
       <div id="results-section" class="hidden">
+        <!-- Back Link for Deep Linked Users -->
+        <div id="back-link-container" class="hidden" style="margin-bottom:20px;">
+          <a href="/results.html" class="text-blue text-sm" style="display:inline-flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; background:rgba(79, 142, 247, 0.1); padding:8px 16px; border-radius:8px;">
+            <span>←</span> Choose Another Election
+          </a>
+        </div>
+
         <!-- Winner Card -->
         <div class="winner-card" id="winner-card">
           <div class="winner-crown">👑</div>
