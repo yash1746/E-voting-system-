@@ -208,6 +208,7 @@ router.post('/verify-otp', async (req, res) => {
         voter_id_number: voter.voter_id_number,
         district: voter.district,
         state: voter.state,
+        constituency: voter.constituency,
       },
       role: session.role,
       message: 'Identity verified successfully. Welcome to the National E-Voting System.',
