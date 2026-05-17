@@ -20,3 +20,9 @@ Thumbs.db
 
 # Build
 dist/
+
+# Private documentation — DO NOT push to GitHub
+PROJECT_DOCUMENTATION.md
+project_documentation.md
+scratch/
+debug_check.js

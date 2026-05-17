@@ -34,8 +34,11 @@ app.use(helmet({
   },
 }));
 
+// Trust Vercel's proxy so rate limiters see the real visitor IP
+app.set('trust proxy', 1);
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:3000',
+  origin: true, // Allow the deployed domain automatically
   credentials: true,
 }));
 
@@ -44,7 +47,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 const authLimiter = rateLimit({
   windowMs: isDev ? 60 * 1000 : 15 * 60 * 1000, // 1 min dev / 15 min prod
-  max: isDev ? 100 : 10,                          // 100 dev / 10 prod
+  max: isDev ? 100 : 30,                          // 100 dev / 30 prod (per real IP)
   skip: (req) => isDev && req.ip === '::1',        // skip for localhost in dev
   message: { error: 'Too many authentication attempts. Please wait and try again.' },
   standardHeaders: true,
@@ -53,7 +56,7 @@ const authLimiter = rateLimit({
 
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isDev ? 2000 : 200,
+  max: isDev ? 2000 : 500,
   message: { error: 'Too many requests. Please slow down.' },
 });
 
