@@ -47,6 +47,10 @@ async function init() {
     isInfoOnly = params.get('info') === 'true' || !isEligibleState;
     let candidates = election.candidates || [];
     
+    console.log('[DEBUG] Logged-in Voter User:', user);
+    console.log('[DEBUG] Election Candidates:', candidates);
+    console.log('[DEBUG] Voter Constituency:', user.constituency);
+    
     if (!isInfoOnly) {
       // Filter candidates for the voter's specific constituency
       candidates = candidates.filter(c => c.constituency === user.constituency);
