@@ -49,6 +49,16 @@ router.post('/:electionId', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Invalid candidate selection.' });
     }
 
+    // Check constituency-level eligibility if the candidate belongs to a specific constituency
+    if (validCandidate.constituency) {
+      if (!req.voter.constituency) {
+        return res.status(403).json({ error: 'Your voter profile does not have a registered constituency.' });
+      }
+      if (validCandidate.constituency.toLowerCase() !== req.voter.constituency.toLowerCase()) {
+        return res.status(403).json({ error: `You are not eligible to vote in the ${validCandidate.constituency} constituency.` });
+      }
+    }
+
     // 3. CRITICAL: Check for duplicate vote (atomic check)
     const { data: existingReceipt } = await supabase
       .from('vote_receipts')

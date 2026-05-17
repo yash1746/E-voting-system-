@@ -21,11 +21,8 @@ router.get('/', requireAuth, async (req, res) => {
 
     if (error) throw error;
 
-    // Filter by state if voter role
-    const filteredElections = req.role === 'admin' ? elections : elections.filter(e => {
-      if (!e.eligible_states || e.eligible_states.length === 0) return true;
-      return e.eligible_states.includes(req.voter.state);
-    });
+    // Allow all elections to be loaded so the dashboard can show other states' elections in view-only mode
+    const filteredElections = elections;
 
     if (filteredElections.length === 0) {
       return res.json({ elections: [] });

@@ -4,6 +4,7 @@ const electionId = params.get('election');
 let selectedCandidateId = null;
 let election = null;
 let receiptTokenNew = null;
+let isInfoOnly = false;
 
 // ─── Initialise page ─────────────────────────────────────────
 async function init() {
@@ -40,15 +41,61 @@ async function init() {
       return;
     }
 
-    const isInfoMode = params.get('info') === 'true';
+    // Determine state eligibility
+    const isEligibleState = !election.eligible_states || election.eligible_states.length === 0 || election.eligible_states.includes(user.state);
+    
+    isInfoOnly = params.get('info') === 'true' || !isEligibleState;
     let candidates = election.candidates || [];
     
-    if (!isInfoMode) {
+    if (!isInfoOnly) {
       // Filter candidates for the voter's specific constituency
       candidates = candidates.filter(c => c.constituency === user.constituency);
       
       if (candidates.length === 0) {
         showToast('info', 'No Candidates', `No candidates found for your constituency (${user.constituency}).`);
+      }
+    } else {
+      // Create a prominent view-only warning banner at the top of the container
+      const banner = document.createElement('div');
+      banner.className = 'alert alert-info';
+      banner.style.marginBottom = '24px';
+      banner.style.textAlign = 'left';
+      banner.style.background = 'rgba(59, 130, 246, 0.1)';
+      banner.style.border = '1px solid var(--blue)';
+      
+      if (!isEligibleState) {
+        banner.innerHTML = `
+          <span class="alert-icon">ℹ️</span>
+          <div>
+            <strong>View-Only Mode:</strong> You are registered in <strong>${user.state.toUpperCase()}</strong>. 
+            You can view details, parties, and candidates, but you cannot cast a vote in this election (eligible for: ${election.eligible_states.join(', ')}).
+          </div>
+        `;
+      } else {
+        banner.innerHTML = `
+          <span class="alert-icon">ℹ️</span>
+          <div>
+            <strong>View-Only Mode:</strong> Exploring all candidates in this election. You cannot cast a vote in this mode.
+          </div>
+        `;
+      }
+      
+      const container = document.querySelector('.page-wrapper > .container');
+      if (container) {
+        container.insertBefore(banner, container.firstChild);
+      }
+      
+      // Hide the confirm/submit selection button
+      const confirmBtn = document.getElementById('confirm-vote-btn');
+      if (confirmBtn) confirmBtn.style.display = 'none';
+      
+      // Update header badge to indicate View-Only Mode
+      const badge = document.querySelector('.vote-booth-header .badge');
+      if (badge) {
+        badge.textContent = 'ℹ️ View Only Mode';
+        badge.className = 'badge badge-upcoming';
+        badge.style.background = 'var(--gold-glass)';
+        badge.style.borderColor = 'var(--gold)';
       }
     }
 
@@ -98,6 +145,7 @@ function renderCandidates(candidates) {
 
 // ─── Select a candidate ───────────────────────────────────────
 function selectCandidate(id) {
+  if (isInfoOnly) return; // Prevent selection in view-only mode
   selectedCandidateId = id;
   document.querySelectorAll('.candidate-card').forEach(c => c.classList.remove('selected'));
   const card = document.querySelector(`[data-candidate-id="${id}"]`);
