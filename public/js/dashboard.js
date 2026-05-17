@@ -88,7 +88,7 @@ function renderElections() {
     const statusBadge = {
       active:   '<span class="badge badge-active">🟢 Active</span>',
       upcoming: '<span class="badge badge-upcoming">🟡 Upcoming</span>',
-      closed:   '<span class="badge badge-closed">⚫ Closed</span>',
+      closed:   '<span class="badge badge-closed" style="background:rgba(239, 68, 68, 0.1); border-color:var(--red); color:var(--red); animation: pulse-red 2s infinite; font-weight:700;">🔴 Results Out</span>',
     }[e.status] || '';
 
     const votedBadge = e.has_voted ? '<span class="badge badge-voted">✅ Voted</span>' : '';

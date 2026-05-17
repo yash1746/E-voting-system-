@@ -100,6 +100,7 @@ async function init() {
   await loadElections();
   await loadParties(); // Preload for candidate selection
   loadVoters();
+  updateSidebarBadges();
 }
 
 // ─── Stats ────────────────────────────────────────────────────
@@ -344,14 +345,36 @@ async function toggleVoter(id) {
 }
 
 // ─── Applications ─────────────────────────────────────────────
+async function updateSidebarBadges() {
+  try {
+    const data = await api.get('/register/pending');
+    const apps = data.applications || [];
+    const badge = document.getElementById('nav-badge-apps');
+    if (badge) {
+      if (apps.length > 0) {
+        badge.textContent = apps.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+  } catch (err) {
+    console.error('updateSidebarBadges error:', err);
+  }
+}
+
 async function loadApplications() {
   try {
     const data = await api.get('/register/pending');
     const apps = data.applications || [];
     const tbody = document.getElementById('apps-tbody');
+    
+    updateSidebarBadges();
 
     if (!apps.length) {
       tbody.innerHTML = '<tr><td colspan="5" class="text-muted" style="text-align:center; padding:40px;">No pending applications found.</td></tr>';
+      const badge = document.getElementById('nav-badge-apps');
+      if (badge) badge.classList.add('hidden');
       return;
     }
 
